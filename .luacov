@@ -1,0 +1,9 @@
+reporter = "html"
+reportfile = "luacov.report.html"
+statsfile = "luacov.stats"
+include = "lua"
+exclude = {
+  ".luarocks/",
+  "spec/",
+  "vim/",
+}

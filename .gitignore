@@ -1,0 +1,4 @@
+.luarocks/
+luacov.report.html
+luacov.stats
+src
