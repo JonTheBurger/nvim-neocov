@@ -16,7 +16,7 @@ vim.api.nvim_create_user_command("JJ", function()
     virt_text = {{"▏", "ErrorMsg"}},
     -- virt_text = {{"▕", "ErrorMsg"}},
     -- virt_text_pos = "eol_right_align",
-    virt_text_pos = "inline",
+    virt_text_pos = "overlay",
     virt_text_repeat_linebreak = true,
   })
 end, {})
@@ -27,5 +27,7 @@ vim.api.nvim_create_user_command("JK", function()
 end, {})
 
 vim.api.nvim_create_user_command("JL", function()
-  vim.print(require("nvim-neocov.parse.sonarqube").parse("/home/jon/Projects/scratch/main.sonarqube.xml"))
+  local cov = require("nvim-neocov.parse.sonarqube").parse("/home/jon/Projects/scratch/main.sonarqube.xml")
+  vim.print(cov)
+  require("nvim-neocov.util.annotate").file(0, cov)
 end, {})
