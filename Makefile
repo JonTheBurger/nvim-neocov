@@ -98,6 +98,9 @@ docker.build: ## Builds the docker image
 docker.run: docker.build ## Runs the docker image
 	docker run --rm -it nvim-neocov
 
+external: ## Vendor xml2lua
+
+
 nvim-neocov:
 	mkdir -p "${HOME}/.local/bin/"
 	echo "#!/bin/bash" > "${HOME}/.local/bin/nvim-neocov"
