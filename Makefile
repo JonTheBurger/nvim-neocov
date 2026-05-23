@@ -9,6 +9,7 @@ BLU := \033[36m
 RST := \033[0m
 MAKEFILE_DIR := $(subst ${CURDIR}/,,$(dir $(abspath $(lastword $(MAKEFILE_LIST))))).
 LUAROCKS := luarocks --lua-version 5.1 --tree ${MAKEFILE_DIR}/.luarocks
+XML2LUA_REF := v1.6-1
 
 # This fixes luasystem not being able to find RT_DIR upon install
 ifdef RT_DIR
@@ -99,7 +100,20 @@ docker.run: docker.build ## Runs the docker image
 	docker run --rm -it nvim-neocov
 
 external: ## Vendor xml2lua
-
+	rm -rf lua/nvim-neocov/external/xml2lua
+	git -C lua/nvim-neocov/external clone https://github.com/manoelcampos/xml2lua
+	git -C lua/nvim-neocov/external/xml2lua checkout ${XML2LUA_REF}
+	find lua/nvim-neocov/external/xml2lua \
+	  -type f \
+	  ! -name "XmlParser.lua" \
+	  ! -name "xml2lua.lua" \
+	  ! -name "dom.lua" \
+	  ! -name "print.lua" \
+	  ! -name "tree.lua" \
+	  -delete
+	find lua/nvim-neocov/external/xml2lua \
+	  -name "*.lua" \
+	  -exec sed -i 's#require("#require("nvim-neocov.external.xml2lua.#g' {} +
 
 nvim-neocov:
 	mkdir -p "${HOME}/.local/bin/"
