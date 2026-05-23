@@ -1,3 +1,6 @@
+-- TODO(POVIRK): remove
+require("nvim-neocov")
+
 if vim.g.loaded_nvim_neocov then
   return
 end

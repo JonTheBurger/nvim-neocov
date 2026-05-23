@@ -2,6 +2,8 @@ local ns = vim.api.nvim_create_namespace("nvim-neocov")
 local m = -1
 
 vim.api.nvim_create_user_command("JJ", function()
+  vim.print(vim.fn.expand("%:."))
+  
   m = vim.api.nvim_buf_set_extmark(0, ns, 2, 0, {
     strict = false,
     end_col = -1,
@@ -22,4 +24,8 @@ end, {})
 vim.api.nvim_create_user_command("JK", function()
   local mark = vim.api.nvim_buf_get_extmark_by_id(0, ns, m, {details = true})
   vim.print(mark)
+end, {})
+
+vim.api.nvim_create_user_command("JL", function()
+  vim.print(require("nvim-neocov.parse.sonarqube").parse("/home/jon/Projects/scratch/main.sonarqube.xml"))
 end, {})

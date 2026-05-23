@@ -39,14 +39,14 @@
 ---@field covered int Number of covered branches on the line
 
 ---@class nvim-neocov.Coverage Coverage data for a file.
----@field lines table[int, nvim-neocov.Line] Line coverage data, 1 indexed.
+---@field lines table<int, nvim-neocov.Line> Line coverage data, 1 indexed.
 
 ---@class nvim-neocov.Report Coverage data for multiple files.
----@filed files table[string, nvim-neocov.Coverage] Coverage data for each file.
+---@field files table<string, nvim-neocov.Coverage> Coverage data for each file.
 
 ---@class nvim-neocov.FileOpts Data used to find a coverage report for a file.
 ---@field ft string File type coverage is being requested for.
----@field path string Path of the file coverage is being requested for.
+---@field path string Path of the file coverage is being requested for. Relative to pwd, as in "vim.fn.expand("%:.")".
 
 ---@class nvim-neocov.Options User-configurable options.
 ---@field style? nvim-neocov.Options.Style How coverage data should be displayed
