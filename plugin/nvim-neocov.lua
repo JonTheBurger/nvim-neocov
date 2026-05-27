@@ -1,6 +1,3 @@
--- TODO(POVIRK): remove
-require("nvim-neocov")
-
 if vim.g.loaded_nvim_neocov then
   return
 end
@@ -36,22 +33,3 @@ end, {
     return { "generate", "load", "clear", "toggle", "report", "watch" }
   end,
 })
-
--- TODO(POVIRK): complete
-vim.keymap.set("n", "<Plug>(nvim-neocov-TODO)", function()
-end, { noremap = true, desc = "" })
-
---TODO(JON): Delete these debug commands
-vim.api.nvim_create_user_command("JJ", function()
-end, {})
-
-vim.api.nvim_create_user_command("JK", function()
-  require("nvim-neocov.annotate").clear(0)
-end, {})
-
-vim.api.nvim_create_user_command("JL", function()
-  local cov = require("nvim-neocov.parse.sonarqube").parse("/home/jon/Projects/scratch/main.sonarqube.xml")
-  vim.print(cov)
-  require("nvim-neocov.annotate").buffer(0, cov)
-end, {})
-

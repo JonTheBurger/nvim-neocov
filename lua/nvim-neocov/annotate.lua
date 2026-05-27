@@ -2,16 +2,15 @@
 local M = {}
 
 --- Namespace for marks
-M.ns = vim.api.nvim_create_namespace("nvim-neocov")
-
----@type int[]
-M.annotated = {}
+M.ns = vim.api.nvim_create_namespace("Neocov")
 
 --- Adds coverage annotations to a buffer
 ---@param buf int Buffer to annotate, 0 for the current buffer
 ---@param cov nvim-neocov.Coverage Coverage data
 M.buffer = function(buf, cov)
   local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":.")
+  if cov.files[filename] == nil then return end
+
   local lines = cov.files[filename].lines
   for line = 1, vim.api.nvim_buf_line_count(buf) do
     if lines[line] ~= nil then
@@ -20,25 +19,12 @@ M.buffer = function(buf, cov)
       M.add(buf, line, { branches = 0, covered = 0 })
     end
   end
-
-  -- Track the buffers we annotate
-  if not vim.tbl_contains(M.annotated, buf) then
-    M.annotated[#M.annotated + 1] = buf
-  end
 end
 
---- Remove all coverage annotations from the buffer
----@param bufs? int|int[] Buffer to clear, 0 for the current buffer, or nil for all buffers
-M.clear = function(bufs)
-  if bufs == nil then
-    bufs = M.annotated
-  elseif type(bufs) == "number" then
-    bufs = { bufs }
-  end
-
-  for _, buf in ipairs(bufs) do
-    vim.api.nvim_buf_clear_namespace(buf, M.ns, 0, -1)
-  end
+--- Remove all coverage annotations from the given buffer
+---@param buf int Buffer to clear annotations from
+M.clear = function(buf)
+  vim.api.nvim_buf_clear_namespace(buf, M.ns, 0, -1)
 end
 
 --- Create an extmark for a given coverage line in the buffer

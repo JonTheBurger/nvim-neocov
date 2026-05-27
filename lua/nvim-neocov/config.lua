@@ -5,14 +5,24 @@ local M = {}
 ---@return boolean Success
 ---@return string? Error message
 M.validate = function(opts)
-  --TODO(JON): xq
+  -- TODO(JON): Check if a coverage file can be found
   return true, ""
 end
 
 ---Configures the plugin with the given options
 ---@param cfg nvim-neocov.Config
 M.apply = function(cfg)
-  local _ = cfg
+  vim.api.nvim_create_augroup("Neocov", { clear = true })
+  if #cfg.autoload > 0 then
+    vim.api.nvim_create_autocmd("BufWinEnter", {
+      group = "Neocov",
+      callback = function(args)
+        if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then
+          require("nvim-neocov").load(args.buf)
+        end
+      end
+    })
+  end
 end
 
 ---Set up the plugin with custom settings
@@ -27,7 +37,8 @@ end
 M.defaults = {
   parsers = {
     sonarqube = require("nvim-neocov.parse.sonarqube").parse
-  }
+  },
+  autoload = {},
 }
 
 M.setup()

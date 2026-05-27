@@ -6,13 +6,8 @@
 - vim.fn.bufnr("/path/to/file")
     - if bufnr ~= -1 and vim.api.nvim_buf_is_loaded(bufnr) then
 
+- Autocommand load coverage
 - Formats
-- XML Parsing
-    - vendor xml2lua
-    - lua-expat
-    - executables
-        - xmllint
-        - xq
 - Hover
 - End of line annotations
 - Neotest integration
