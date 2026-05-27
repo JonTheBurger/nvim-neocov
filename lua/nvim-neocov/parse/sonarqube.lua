@@ -3,7 +3,7 @@ local M = {}
 local toint = require("nvim-neocov.util").toint
 
 ---@param file any SonarQube XML <file> element
----@return nvim-neocov.Line[] line from element
+---@return nvim-neocov.LineCoverage[] line from element
 M.parse_lines = function(file)
   local lines = {}
   if file.lineToCover == nil then return lines end
@@ -42,12 +42,12 @@ end
 
 --- Parse sonarqube xml
 ---@param cov string Coverage file being parsed.
----@param _opts? nvim-neocov.FileOpts Information about the file where this request originated.
----@return nvim-neocov.Report report parsed from the file.
-M.parse = function(cov, _opts)
-  local xml = require("nvim-neocov.util.xml").to_table(cov)
+---@param src? string Information about the file where this request originated.
+---@return nvim-neocov.Coverage report parsed from the file.
+M.parse = function(cov, src)
+  local xml = require("nvim-neocov.xml").to_table(cov)
 
-  ---@type nvim-neocov.Report
+  ---@type nvim-neocov.Coverage
   local report = {
     files = {},
   }
