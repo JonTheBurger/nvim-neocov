@@ -11,9 +11,17 @@ vim.api.nvim_set_hl(0, "NeocovNoCode", { link = "NeocovCovered" })
 vim.api.nvim_create_user_command("Neocov", function(opts)
   if opts.fargs[1] == "load" then
     require("nvim-neocov").load()
+    require("nvim-neocov").annotate()
   elseif opts.fargs[1] == "clear" then
     require("nvim-neocov").clear()
-  elseif opts.fargs[1] == "watch" then
+  elseif opts.fargs[1] == "report" then
+    local coverage = require("nvim-neocov").load()
+    if coverage ~= nil then
+      local summary = require("nvim-neocov").summary(coverage)
+
+      vim.print(tostring(summary))
+      -- TODO(JON): Make a floating buffer with the stringified output
+    end
   else
   end
 end, {
@@ -27,9 +35,11 @@ end, {
     line = line:sub(1, cursor)
     if line:find("^Neocov%s+report") then
       return { "show", "hide", "toggle" }
+    elseif line:find("^Neocov%s+summary") then
+      return { "show", "hide", "toggle" }
     elseif line:find("^Neocov%s+watch") then
       return { "on", "off", "toggle" }
     end
-    return { "generate", "load", "clear", "toggle", "report", "watch" }
+    return { "generate", "load", "clear", "toggle", "report", "summary", "watch" }
   end,
 })

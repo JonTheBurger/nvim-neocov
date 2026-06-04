@@ -43,10 +43,11 @@
 
 ---@class nvim-neocov.Coverage Coverage data for multiple files.
 ---@field files table<string, nvim-neocov.FileCoverage> Coverage data for each file.
+---TODO(JON): This isn't close to having enough info for Summary
 
 ---@class nvim-neocov.CoverageFile File that coverage data can be loaded from.
 ---@field path string Path to the coverage file on disk.
----@field kind nvim-neocov.ParserKind
+---@field kind nvim-neocov.ParserKind Name of the parser to use when loading this coverage file.
 
 ---@class nvim-neocov.Options User-configurable options
 ---TODO(JON): Should this be per-ft?
@@ -68,3 +69,5 @@
 ---@field cmd fun(src: string?) Function invoked to run the coverage command(s). TODO(JON): Should this be a coroutine?
 ---@field style nvim-neocov.Options.Style How coverage data should be displayed
 ---@field autoload string[] filetypes to auto-load coverage data for, use `:set filetype?` to detect for a given file.
+
+---TODO(JON): Something should maybe have execution counts

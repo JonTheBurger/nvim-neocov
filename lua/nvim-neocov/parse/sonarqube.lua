@@ -53,15 +53,15 @@ M.parse = function(cov, src)
   }
 
   if xml.coverage == nil then
-    vim.notify("Missing tag <coverage>", vim.log.levels.ERROR)
+    vim.notify("Neocov sonarqube: " .. cov .. " Missing tag <coverage>", vim.log.levels.ERROR)
     return report
   end
   if xml.coverage.file == nil then
-    vim.notify("Missing tag <file>", vim.log.levels.ERROR)
+    vim.notify("Neocov sonarqube: " .. cov .. " Missing tag <file>", vim.log.levels.ERROR)
     return report
   end
   if xml.coverage._attr.version ~= "1" then
-    vim.notify("Unsupported SonarQube XML verison: " .. tostring(xml.coverage._attr.version) .. " expected 1", vim.log.levels.ERROR)
+    vim.notify("Neocov sonarqube: " .. cov .. " Unsupported SonarQube XML verison: " .. tostring(xml.coverage._attr.version) .. " expected 1", vim.log.levels.ERROR)
     return report
   end
 
