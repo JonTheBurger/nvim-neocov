@@ -27,6 +27,16 @@ M.mtime = 0
 ---@type int[]
 M.annotated = {}
 
+---@type nvim-neocov.Scope[]
+M.scope_names = {
+  "conditions",
+  "branches",
+  "lines",
+  "blocks",
+  "functions",
+  "files",
+}
+
 ----------------------------------------------------------------------------------------
 ---@endsection
 ---@section Functions
@@ -73,6 +83,7 @@ end
 --- Loads the coverage data and adds annotations the given buffers.
 ---@return nvim-neocov.Coverage?
 M.load = function()
+  -- TODO(POVIRK): make this an input
   -- Find
   if M.file == nil then
     M.file = M.find()
@@ -85,6 +96,7 @@ M.load = function()
   if mtime > M.mtime then
     M.coverage = require("nvim-neocov.config").config.parsers[M.file.kind](M.file.path)
     M.mtime = mtime
+    vim.api.nvim_exec_autocmds("User", { pattern = "NeocovNewCoverageLoaded" })
   end
 
   return M.coverage

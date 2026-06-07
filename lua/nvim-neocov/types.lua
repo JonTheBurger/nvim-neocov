@@ -5,8 +5,9 @@
 ---@alias nvim-neocov.MarkerKind '"sign"' | '"virt_text"' | '"both"' | string
 ---@alias nvim-neocov.ParserKind '"clover"' | '"cobertura"' | '"gcov-json"' | '"gcov"' | '"gcovr-csv"' | '"jacoco"' | '"lcov"' | '"sonarqube"'
 ---@alias nvim-neocov.ReportWin '"hover"' | '"horizontal"' | '"vertical"'
----@alias nvim-neocov.Threshold '"covered"' | '"partial"' | '"uncovered"' | '"nocode"'
+---@alias nvim-neocov.CoverageKind '"covered"' | '"partial"' | '"uncovered"' | '"nocode"'
 ---@alias nvim-neocov.VirtTextPos '"inline"' | '"right_align"' | string
+---@alias nvim-neocov.Scope '"conditions"' | '"branches"' | '"lines"' | '"blocks"' | '"functions"' | '"files"' | string
 
 ---@class nvim-neocov.Annotation Decoration used to display coverage.
 ---@field text string Text used to annotate the coverage on the line. Should not exceed 2 characters.
@@ -37,6 +38,7 @@
 ---@class nvim-neocov.LineCoverage Coverage data for a single line
 ---@field branches int Number of branches on the line
 ---@field covered int Number of covered branches on the line
+---@field execution_count int Number of times the line was executed
 
 ---@class nvim-neocov.FileCoverage Coverage data for a file.
 ---@field lines table<int, nvim-neocov.LineCoverage> Line coverage data, 1 indexed.
@@ -70,4 +72,19 @@
 ---@field style nvim-neocov.Options.Style How coverage data should be displayed
 ---@field autoload string[] filetypes to auto-load coverage data for, use `:set filetype?` to detect for a given file.
 
----TODO(JON): Something should maybe have execution counts
+---@class nvim-neocov.Highlight
+---@field fg? string Foreground highlight, or the name of another highlight to link to.
+---@field bg? string Background highlight, or the name of another highlight to link to.
+
+---@class nvim-neocov.Threshold
+---@field percent number Percentage threshold for this highlight to apply.
+---@field hl nvim-neocov.Highlight
+
+---TODO(JON): Highlight rules for given percentages e.g. >=80 is green
+---@class nvim-neocov.LuaLineOptions
+---@field layouts string[] List of layouts to switch between when clicked on. A layout contains dollar-brace delimited `${<scope-name>}`s, @see nvim-neocov.Scope.
+---@field empty_layout string String to display when no coverage data is loaded.
+---@field formats table<nvim-neocov.Scope, string> The way each type of scope should be formatted, default. `%C/%T (%.1f%%)` @see nvim-neocov.Ratio.format.
+---@field thresholds nvim-neocov.Threshold[] How to highlight >= a given percentage.
+---@field icons table<nvim-neocov.Scope, string> Icons to show when icons are enabled.
+---@field no_icons table<nvim-neocov.Scope, string> "Icons" to show when icons are disabled.

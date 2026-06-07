@@ -16,9 +16,9 @@ function Ratio:new(covered, total)
   return obj  ---@diagnostic disable-line: return-type-mismatch
 end
 
----@return number percentage of covered / total, or -1 if 0/0 total lines are covered.
+---@return number percentage of covered / total, or 100 if 0/0 total lines are covered.
 function Ratio:percent()
-  if self.total == 0 then return -1 end
+  if self.total == 0 then return 100 end
   return 100 * self.covered / self.total
 end
 
