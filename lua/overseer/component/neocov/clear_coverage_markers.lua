@@ -47,9 +47,7 @@ return {
       ---@param result table A result table.
       on_complete = function(self, task, status, result)
         -- Called when the task has reached a completed state.
-        if status == "SUCCESS" then
-          require("nvim-neocov").clear()
-        end
+        if status == "SUCCESS" then require("nvim-neocov").clear() end
       end,
       ---@param status overseer.Status
       on_status = function(self, task, status)

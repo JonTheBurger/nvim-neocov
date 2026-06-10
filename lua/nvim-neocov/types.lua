@@ -73,7 +73,6 @@
 ---@field icons table<nvim-neocov.Scope, string> Icons to show when icons are enabled.
 ---@field no_icons table<nvim-neocov.Scope, string> "Icons" to show when icons are disabled.
 
-
 --@field report_win? ReportWin How a full coverage report should be displayed (hover, or in a split).
 --@field report_width? float How wide a floating report or vertical split report should be, in percent (up to 100.0).
 --@field report_height? float How tall a floating report or horizontal split report should be, in percent (up to 100.0).

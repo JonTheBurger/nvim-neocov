@@ -95,7 +95,7 @@ M.mark = function(buf, line, data, style)
     -- sign_text = "▏",
     -- sign_hl_group = "ErrorMsg",
     virt_text = {
-      { "▍", hl }
+      { "▍", hl },
     },
     -- virt_text = {{"▕", "ErrorMsg"}},
     -- virt_text_pos = "eol_right_align",

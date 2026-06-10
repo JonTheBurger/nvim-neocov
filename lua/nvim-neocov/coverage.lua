@@ -117,9 +117,7 @@ Coverage.find = function(src)
       -- Glob support
       ---@type string[]
       local matches = vim.fn.glob(file.path, false, true)
-      if #matches > 0 then
-        return { path = matches[1], kind = file.kind }
-      end
+      if #matches > 0 then return { path = matches[1], kind = file.kind } end
     elseif vim.uv.fs_stat(file.path) then
       -- Regular path exists check
       return file
@@ -143,6 +141,4 @@ end
 ---@param kind nvim-neocov.ParserKind Name of parser to use
 ---@param coverage_file string Path to existing file containing coverage data
 ---@return boolean True for success, false for failure
-Coverage.generate = function(source_file, kind, coverage_file)
-  return false
-end
+Coverage.generate = function(source_file, kind, coverage_file) return false end

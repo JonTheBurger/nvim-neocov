@@ -17,10 +17,8 @@ M.apply = function(cfg)
     vim.api.nvim_create_autocmd("BufWinEnter", {
       group = "Neocov",
       callback = function(args)
-        if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then
-          require("nvim-neocov").load(args.buf)
-        end
-      end
+        if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then require("nvim-neocov").load(args.buf) end
+      end,
     })
   end
 end
@@ -36,7 +34,7 @@ end
 ---@type nvim-neocov.Options
 M.defaults = {
   parsers = {
-    sonarqube = require("nvim-neocov.parse.sonarqube").parse
+    sonarqube = require("nvim-neocov.parse.sonarqube").parse,
   },
   autoload = {},
 }

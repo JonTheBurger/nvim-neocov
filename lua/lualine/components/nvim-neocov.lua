@@ -31,7 +31,7 @@ local default_options = {
   layouts = {
     "${branches}",
     "${lines}",
-    "${functions}"
+    "${functions}",
   },
   empty_layout = "cov 󱔢",
   --TODO(JON): Percent %% isn't working?
@@ -162,9 +162,7 @@ function M:update_status()
     end
 
     local part, substitutions = rep:gsub("${" .. scope .. "}", opts.icons[scope] .. " " .. summary[scope]:format(opts.formats[scope]))
-    if substitutions > 0 then
-      rep = fmt .. part .. eof
-    end
+    if substitutions > 0 then rep = fmt .. part .. eof end
   end
 
   return rep

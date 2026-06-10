@@ -46,9 +46,7 @@ M.scope_names = {
 
 --- Set up the plugin with custom settings
 ---@param opts? nvim-neocov.Options Plugin options
-M.setup = function(opts)
-  require("nvim-neocov.config").setup(opts)
-end
+M.setup = function(opts) require("nvim-neocov.config").setup(opts) end
 
 --- Locates a coverage file on disk
 ---@param src string? File the corresponding coverage report is being requested for, or nil if for the full project. If your project contains both C++ and Python, this is used to determine which kind of report to look up.
@@ -70,9 +68,7 @@ M.find = function(src)
       -- Glob support
       ---@type string[]
       local matches = vim.fn.glob(file.path, false, true)
-      if #matches > 0 then
-        return { path = matches[1], kind = file.kind }
-      end
+      if #matches > 0 then return { path = matches[1], kind = file.kind } end
     elseif vim.uv.fs_stat(file.path) then
       -- Regular path exists check
       return file
@@ -163,9 +159,7 @@ M.summary = function(coverage, file)
   end
 
   -- Fetch from cache
-  if M._file_summaries[file] ~= nil then
-    return M._file_summaries[file]
-  end
+  if M._file_summaries[file] ~= nil then return M._file_summaries[file] end
 
   -- Load
   local summary = Summary:new()
@@ -178,9 +172,7 @@ M.summary = function(coverage, file)
     end
   else
     -- File Summary
-    if coverage.files[file] ~= nil then
-      summary = M._file_summary(coverage.files[file])
-    end
+    if coverage.files[file] ~= nil then summary = M._file_summary(coverage.files[file]) end
   end
 
   -- Cache

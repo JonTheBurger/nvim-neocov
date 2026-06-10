@@ -61,9 +61,7 @@ M.template = "[%-5s] [%s] [%s]: %s"
 ----------------------------------------------------------------------------------------
 
 ---@return string Time of log message
-M.time = function()
-  return os.date("%H:%M:%S")
-end
+M.time = function() return os.date("%H:%M:%S") end
 
 --- Gets the "file:line" of the given scope
 ---@param at? int Scope, 1 for current, 2 for frame below, etc.
@@ -75,9 +73,7 @@ M.file_line = function(at)
 
   local file = info.short_src
   local start = file:find(vim.pesc(M.name .. "/lua"))
-  if start ~= nil then
-    file = "." .. file:sub(start + #M.name + #"/lua")
-  end
+  if start ~= nil then file = "." .. file:sub(start + #M.name + #"/lua") end
   return file .. ":" .. tostring(info.currentline)
 end
 
@@ -171,14 +167,10 @@ M.logf = function(level, fmt, ...)
 end
 
 --- For dumping tables and control flow useful for users to upload when triaging bug reports.
-M.trace = function(...)
-  return M.log("trace", ...)
-end
+M.trace = function(...) return M.log("trace", ...) end
 
 --- Users usually don't care about these, but if they turn them on they should get some info that helps them troubleshoot issues.
-M.debug = function(...)
-  return M.log("debug", ...)
-end
+M.debug = function(...) return M.log("debug", ...) end
 
 --- A state change or event occurred, and the user should know.
 M.info = function(...)
@@ -208,13 +200,9 @@ M.fatal = function(...)
   return msg
 end
 
-M.tracef = function(fmt, ...)
-  return M.logf("trace", fmt, ...)
-end
+M.tracef = function(fmt, ...) return M.logf("trace", fmt, ...) end
 
-M.debugf = function(fmt, ...)
-  return M.logf("debug", fmt, ...)
-end
+M.debugf = function(fmt, ...) return M.logf("debug", fmt, ...) end
 
 M.infof = function(fmt, ...)
   local msg = M.logf("info", fmt, ...)

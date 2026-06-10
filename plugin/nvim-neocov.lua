@@ -1,6 +1,4 @@
-if vim.g.loaded_nvim_neocov then
-  return
-end
+if vim.g.loaded_nvim_neocov then return end
 vim.g.loaded_nvim_neocov = true
 
 vim.api.nvim_set_hl(0, "NeocovUncovered", { link = "ErrorMsg" })

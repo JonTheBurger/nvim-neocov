@@ -27,7 +27,7 @@ Summary.new = function(conditions, branches, lines, blocks, functions, files)
     files = files or Ratio.new(),
   }
   setmetatable(self, Summary)
-  return self  ---@diagnostic disable-line: return-type-mismatch
+  return self ---@diagnostic disable-line: return-type-mismatch
 end
 
 ---@param other nvim-neocov.Summary
@@ -57,8 +57,6 @@ function Summary:format(fmt)
 end
 
 ---@return string
-function Summary:__tostring()
-  return self:format()
-end
+function Summary:__tostring() return self:format() end
 
 return Summary

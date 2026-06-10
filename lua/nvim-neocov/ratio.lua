@@ -13,7 +13,7 @@ Ratio.new = function(covered, total)
     total = total or 0,
   }
   setmetatable(self, Ratio)
-  return self  ---@diagnostic disable-line: return-type-mismatch
+  return self ---@diagnostic disable-line: return-type-mismatch
 end
 
 ---@return number percentage of covered / total, or 100 if 0/0 total lines are covered.
@@ -24,12 +24,7 @@ end
 
 ---@param other nvim-neocov.Ratio
 ---@return nvim-neocov.Ratio
-function Ratio:__add(other)
-  return Ratio.new(
-    self.covered + other.covered,
-    self.total + other.total
-  )
-end
+function Ratio:__add(other) return Ratio.new(self.covered + other.covered, self.total + other.total) end
 
 ---@param fmt? string Form of "3/6 (50.0%)" by default. `%C` for covered, `%T` for total, `%f` for percent. Use e.g. `%.1f` for formatting percent with decimals.
 ---@return string
@@ -41,8 +36,6 @@ function Ratio:format(fmt)
 end
 
 ---@return string representation in the form of "3/6 (50.0%)"
-function Ratio:__tostring()
-  return self:format()
-end
+function Ratio:__tostring() return self:format() end
 
 return Ratio
