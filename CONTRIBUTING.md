@@ -60,7 +60,19 @@ For convenience, `make check` runs `format`, `lint`, `test`, and cov.
 For the best experience, use `make shell` and `make setup` when developing
 locally. Use `make docker.run` to diagnose environment leaks.
 
+## Style
+
+- Document all types for functions
+- Declare **functions** (without implicit self) in the form `Module.method = function()`
+- Declare **methods** (with implicit self) in the form `function Class:method()`
+- Declaration order within a file is:
+    1. Global `require`s
+    2. Locally defined types
+    3. "static" (non-method) functions
+    4. methods (implicit this :functions)
+
 ## Notes
+
 - `init.lua` is intended to be API stable - don't break users!
 - `CHANGELOG.md` should be updated for each release.
 - Docs are generated locally - if you update config, please update the

@@ -1,4 +1,6 @@
----Public API for nvim-neocov
+---Public API for nvim-neocov.
+---This file should mostly just be a shim for other APIs.
+---Only `plugin/` and third party integration modules should include this file.
 local M = {}
 
 local Summary = require("nvim-neocov.summary")

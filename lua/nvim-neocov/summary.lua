@@ -17,24 +17,23 @@ Summary.__index = Summary
 ---@param functions nvim-neocov.Ratio? Field.
 ---@param files nvim-neocov.Ratio? Field.
 ---@return nvim-neocov.Summary
-function Summary:new(conditions, branches, lines, blocks, functions, files)
-  local obj = {
-    conditions = conditions or Ratio:new(),
-    branches = branches or Ratio:new(),
-    lines = lines or Ratio:new(),
-    blocks = blocks or Ratio:new(),
-    functions = functions or Ratio:new(),
-    files = files or Ratio:new(),
+Summary.new = function(conditions, branches, lines, blocks, functions, files)
+  local self = {
+    conditions = conditions or Ratio.new(),
+    branches = branches or Ratio.new(),
+    lines = lines or Ratio.new(),
+    blocks = blocks or Ratio.new(),
+    functions = functions or Ratio.new(),
+    files = files or Ratio.new(),
   }
-  setmetatable(obj, self)
-  self.__index = self
-  return obj  ---@diagnostic disable-line: return-type-mismatch
+  setmetatable(self, Summary)
+  return self  ---@diagnostic disable-line: return-type-mismatch
 end
 
 ---@param other nvim-neocov.Summary
 ---@return nvim-neocov.Summary
 function Summary:__add(other)
-  return Summary:new(
+  return Summary.new(
     (self.conditions + other.conditions),
     (self.branches + other.branches),
     (self.lines + other.lines),

@@ -147,69 +147,97 @@ end
 --- Writes comma-separated variables to the log
 ---@param level nvim-neocov.LogLevel
 ---@vararg Any lua objects
+---@return string message body sent to logger, or empty string
 M.log = function(level, ...)
-  if M.levels[level].verbosity > M.levels[M.config.level].verbosity then return end
-  local msg = M.format(level, table.concat(vim.tbl_map(M.stringify, { ... }), " "))
-  M.to_file(msg)
-  M.to_console(level, msg)
+  if M.levels[level].verbosity > M.levels[M.config.level].verbosity then return "" end
+  local msg = table.concat(vim.tbl_map(M.stringify, { ... }), " ")
+  local entry = M.format(level, msg)
+  M.to_file(entry)
+  M.to_console(level, entry)
+  return msg
 end
 
 --- Using @see string.format to format a log message
 ---@param level nvim-neocov.LogLevel
 ---@vararg Any lua objects
+---@return string message body sent to logger, or empty string
 M.logf = function(level, fmt, ...)
-  if M.levels[level].verbosity > M.levels[M.config.level].verbosity then return end
-  local msg = M.format(level, string.format(fmt, ...))
-  M.to_file(msg)
-  M.to_console(level, msg)
+  if M.levels[level].verbosity > M.levels[M.config.level].verbosity then return "" end
+  local msg = string.format(fmt, ...)
+  local entry = M.format(level, msg)
+  M.to_file(entry)
+  M.to_console(level, entry)
+  return msg
 end
 
+--- For dumping tables and control flow useful for users to upload when triaging bug reports.
 M.trace = function(...)
-  M.log("trace", ...)
+  return M.log("trace", ...)
 end
 
+--- Users usually don't care about these, but if they turn them on they should get some info that helps them troubleshoot issues.
 M.debug = function(...)
-  M.log("debug", ...)
+  return M.log("debug", ...)
 end
 
+--- A state change or event occurred, and the user should know.
 M.info = function(...)
-  M.log("info", ...)
+  local msg = M.log("info", ...)
+  vim.notify(msg, vim.log.levels.INFO, { title = "Neocov" })
+  return msg
 end
 
+--- The plugin encountered issues that may require a user's attention, in time.
 M.warn = function(...)
-  M.log("warn", ...)
+  local msg = M.log("warn", ...)
+  vim.notify(msg, vim.log.levels.WARN, { title = "Neocov" })
+  return msg
 end
 
+--- The plugin filed to perform a required task. The user probably wants to know about this.
 M.error = function(...)
-  M.log("error", ...)
+  local msg = M.log("error", ...)
+  vim.notify(msg, vim.log.levels.ERROR, { title = "Neocov" })
+  return msg
 end
 
+--- Plugin invariants have been violated, typically an environment or programmer error. We can no longer trust the state of the plugin.
 M.fatal = function(...)
-  M.log("fatal", ...)
+  local msg = M.log("fatal", ...)
+  vim.notify(msg, vim.log.levels.ERROR, { title = "Neocov" })
+  return msg
 end
 
 M.tracef = function(fmt, ...)
-  M.logf("trace", fmt, ...)
+  return M.logf("trace", fmt, ...)
 end
 
 M.debugf = function(fmt, ...)
-  M.logf("debug", fmt, ...)
+  return M.logf("debug", fmt, ...)
 end
 
 M.infof = function(fmt, ...)
-  M.logf("info", fmt, ...)
+  local msg = M.logf("info", fmt, ...)
+  vim.notify(msg, vim.log.levels.INFO, { title = "Neocov" })
+  return msg
 end
 
 M.warnf = function(fmt, ...)
-  M.logf("warn", fmt, ...)
+  local msg = M.logf("warn", fmt, ...)
+  vim.notify(msg, vim.log.levels.WARN, { title = "Neocov" })
+  return msg
 end
 
 M.errorf = function(fmt, ...)
-  M.logf("error", fmt, ...)
+  local msg = M.logf("error", fmt, ...)
+  vim.notify(msg, vim.log.levels.ERROR, { title = "Neocov" })
+  return msg
 end
 
 M.fatalf = function(fmt, ...)
-  M.logf("fatal", fmt, ...)
+  local msg = M.logf("fatal", fmt, ...)
+  vim.notify(msg, vim.log.levels.ERROR, { title = "Neocov" })
+  return msg
 end
 
 ----------------------------------------------------------------------------------------

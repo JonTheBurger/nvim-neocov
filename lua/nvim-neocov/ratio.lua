@@ -2,18 +2,18 @@
 ---@field covered int Covered number of e.g. lines.
 ---@field total int Total number of e.g. lines (always >= covered).
 local Ratio = {}
+Ratio.__index = Ratio
 
 ---@param covered? int Field. 0 by default.
 ---@param total? int Field. 0 by default.
 ---@return nvim-neocov.Ratio
-function Ratio:new(covered, total)
-  local obj = {
+Ratio.new = function(covered, total)
+  local self = {
     covered = covered or 0,
     total = total or 0,
   }
-  setmetatable(obj, self)
-  self.__index = self
-  return obj  ---@diagnostic disable-line: return-type-mismatch
+  setmetatable(self, Ratio)
+  return self  ---@diagnostic disable-line: return-type-mismatch
 end
 
 ---@return number percentage of covered / total, or 100 if 0/0 total lines are covered.
@@ -25,7 +25,7 @@ end
 ---@param other nvim-neocov.Ratio
 ---@return nvim-neocov.Ratio
 function Ratio:__add(other)
-  return Ratio:new(
+  return Ratio.new(
     self.covered + other.covered,
     self.total + other.total
   )

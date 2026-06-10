@@ -8,6 +8,12 @@ vim.api.nvim_set_hl(0, "NeocovParial", { link = "WarningMsg" })
 vim.api.nvim_set_hl(0, "NeocovCovered", { link = "OkMsg" })
 vim.api.nvim_set_hl(0, "NeocovNoCode", { link = "NeocovCovered" })
 
+vim.api.nvim_set_hl(0, "NeocovThresholdTerrible", { link = "DiagnosticError" })
+vim.api.nvim_set_hl(0, "NeocovThresholdBad", { link = "DiagnosticError" })
+vim.api.nvim_set_hl(0, "NeocovThresholdOk", { link = "DiagnosticWarn" })
+vim.api.nvim_set_hl(0, "NeocovThresholdGood", { link = "DiagnosticOk" })
+vim.api.nvim_set_hl(0, "NeocovThresholdPerfect", { link = "DiagnosticInfo" })
+
 vim.api.nvim_create_user_command("Neocov", function(opts)
   if opts.fargs[1] == "load" then
     require("nvim-neocov").load()

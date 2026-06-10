@@ -31,8 +31,10 @@ local default_options = {
   layouts = {
     "${branches}",
     "${lines}",
+    "${functions}"
   },
   empty_layout = "cov 󱔢",
+  --TODO(JON): Percent %% isn't working?
   formats = {
     conditions = "%C/%T (%.1f%%)",
     branches = "%C/%T (%.1f%%)",
@@ -42,35 +44,34 @@ local default_options = {
     files = "%C/%T (%.1f%%)",
   },
   thresholds = {
-    --TODO(POVIRK): Create dedicated highlight groups
     {
       percent = 0,
       hl = {
-        fg = "DiagnosticError",
+        fg = "NeocovThresholdTerrible",
       },
     },
     {
       percent = 30,
       hl = {
-        fg = "DiagnosticError",
+        fg = "NeocovThresholdBad",
       },
     },
     {
       percent = 60,
       hl = {
-        fg = "DiagnosticWarn",
+        fg = "NeocovThresholdOk",
       },
     },
     {
       percent = 80,
       hl = {
-        fg = "DiagnosticOk",
+        fg = "NeocovThresholdGood",
       },
     },
     {
       percent = 100,
       hl = {
-        fg = "DiagnosticInfo",
+        fg = "NeocovThresholdPerfect",
       },
     },
   },

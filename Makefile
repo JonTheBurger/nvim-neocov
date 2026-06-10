@@ -59,7 +59,7 @@ setup: ## Once-per-clone setup
 	${LUAROCKS} install luacheck 1.2.0-1 --force
 	${LUAROCKS} install luacov 0.16.0-1 --force
 	${LUAROCKS} install nlua 0.3.2-1 --force
-	${LUAROCKS} install plenary.nvim scm-1 --force
+	${LUAROCKS} install nvim-nio 1.10.1-1 --force
 	# Required for nix
 	ln -sf ./.luarocks/lib/luarocks/rocks-*/luacov/*/src/ src
 
