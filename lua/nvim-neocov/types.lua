@@ -2,25 +2,31 @@
 ---See: https://luals.github.io/wiki/definition-files/
 -- luacheck: ignore 631 (line-too-long)
 
----@alias nvim-neocov.MarkerKind '"sign"' | '"virt_text"' | '"highlight"' | string
----@alias nvim-neocov.ParserKind '"clover"' | '"cobertura"' | '"gcov-json"' | '"gcov"' | '"jacoco"' | '"lcov"' | '"sonarqube"' | string
----@alias nvim-neocov.ReportWin '"hover"' | '"horizontal"' | '"vertical"'
----@alias nvim-neocov.CoverageKind '"covered"' | '"partial"' | '"uncovered"' | '"nocode"'
----@alias nvim-neocov.VirtTextPos '"inline"' | '"right_align"' | string
 ---@alias nvim-neocov.Scope '"conditions"' | '"branches"' | '"lines"' | '"blocks"' | '"functions"' | '"files"' | string
+---@alias nvim-neocov.ParserKind '"clover"' | '"cobertura"' | '"gcov-json"' | '"gcov"' | '"jacoco"' | '"lcov"' | '"sonarqube"' | string
+---@alias nvim-neocov.CoverageKind '"covered"' | '"partial"' | '"uncovered"' | '"nocode"'
+
+---@alias nvim-neocov.VirtTextPos '"eol"' | '"eol_right_align"' | '"overlay"' | '"right_align"' | '"inline"' | string Where virtual text should be displayed
+---@alias nvim-neocov.DecorationKind
+---| '"sign"' # Use the sign column - does not move when text is updated.
+---| '"virt_text"' # Use virtual text extmarks - move as text is updated.
+---| '"highlight"' # Highlight the line.
+---| string # How a coverage line should be annotated.
 
 ---@class nvim-neocov.Highlight
 ---@field fg? string Foreground highlight, or the name of another highlight to link to.
 ---@field bg? string Background highlight, or the name of another highlight to link to.
 
----@class nvim-neocov.Annotation Decoration used to display coverage.
----@field text string Text used to annotate the coverage on the line. Should not exceed 2 characters.
+---@class nvim-neocov.Decoration Annotation style used to display coverage.
+---@field kind nvim-neocov.DecorationKind How a coverage line should be annotated.
 ---@field hl nvim-neocov.Highlight Color of the annotation text.
+---@field text? string When `kind` is "sign" or "virt_text", denotes gutter symbol; should not exceed 2 characters.
+---@field pos? nvim-neocov.VirtTextPos When `kind` is "virt_text", denotes position of rendered virtual text.
+---@field hl_eol? boolean When `kind` is "highlight", `true` continues highlighting until the edge of the window, `false` highlights only the text.
 
 ---@class nvim-neocov.Options.Style User-configurable display options.
----@field marker_kind? nvim-neocov.MarkerKind Controls how coverage lines are annotated. "sign" does not affect the text buffer but does not move when text is updated. "virt_text" uses extmarks, which move as text is updated.
----@field virt_text_pos? nvim-neocov.VirtTextPos See https://neovim.io/doc/user/api/#nvim_buf_set_extmark()
----@field annotation? table<nvim-neocov.CoverageKind, nvim-neocov.Annotation[]> Style(s) to use when annotating a covered line. Set to `{}` to erase.
+---@field virt_text_pos? nvim-neocov.NvimVirtTextPos See https://neovim.io/doc/user/api/#nvim_buf_set_extmark()
+---@field decorations? table<nvim-neocov.CoverageKind, nvim-neocov.Decoration[]> Style(s) to use when annotating a covered line. Set to `{}` to erase.
 
 ---@class nvim-neocov.Config.Style Resolved display options.
 ---TODO(JON): Options.Style but not nullable
@@ -73,6 +79,7 @@
 ---@field icons table<nvim-neocov.Scope, string> Icons to show when icons are enabled.
 ---@field no_icons table<nvim-neocov.Scope, string> "Icons" to show when icons are disabled.
 
+--@alias nvim-neocov.ReportWin '"hover"' | '"horizontal"' | '"vertical"'
 --@field report_win? ReportWin How a full coverage report should be displayed (hover, or in a split).
 --@field report_width? float How wide a floating report or vertical split report should be, in percent (up to 100.0).
 --@field report_height? float How tall a floating report or horizontal split report should be, in percent (up to 100.0).

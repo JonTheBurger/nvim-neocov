@@ -1,4 +1,5 @@
 local log = require("nvim-neocov.log")
+local cfg = require("nvim-neocov.config").config
 
 ---Uses extmarks to annotate coverage information in a file
 local M = {}
@@ -23,16 +24,13 @@ M.buffer = function(bufs, cov)
 
       local lines = cov.files[filename].lines
       for line = 1, vim.api.nvim_buf_line_count(buf) do
-        if lines[line] ~= nil then
-          M.mark(buf, line, lines[line])
-        else
-          M.mark(buf, line, { branches = 0, covered = 0, execution_count = 0 })
-        end
+        local hl = M.hl(lines[line] or { branches = 0, covered = 0, execution_count = 0 })
+        M.mark(buf, line, hl)
       end
       M.cache[buf] = true
     else
       log.tracef("Attempted to annotate invalid buffer %d", buf)
-      --TODO(JON): bwipeout event should probably M.unload(buf)
+      --TODO(JON): bwipeout event should probably M.unload(buf), use autocmd
       M.unload(buf)
     end
   end
@@ -66,41 +64,48 @@ M.unload = function(bufs)
   end
 end
 
+---Gets the highlight color warranted by a line's coverage
+---@param data nvim-neocov.LineCoverage Line data to annotate with
+---@return string Highlight group to apply
+M.hl = function(data)
+  local hl = "Normal"
+  if data.branches == 0 then
+    hl = "NeocovFgNoCode"
+  elseif data.covered == 0 then
+    hl = "NeocovFgUncovered"
+  elseif data.covered < data.branches then
+    hl = "NeocovFgPartial"
+  elseif data.covered == data.branches then
+    hl = "NeocovFgCovered"
+  end
+  return hl
+end
+
 --- Create an extmark for a given coverage line in the buffer
 ---@param buf int to annotate
 ---@param line int 1-indexed line in file
----@param data nvim-neocov.LineCoverage Line data to annotate with
----@param style? string|string[]|vim.api.keyset.set_extmark[] TODO(JON): Use config items
+---@param hl string Highlight group to apply
+---@param decorations? nvim-neocov.Decoration[] Style rules
 ---@return int mark Handle to the created extmark
-M.mark = function(buf, line, data, style)
-  local hl = "LspInlayHint"
-
-  if data.branches == 0 then
-    hl = "NeocovNoCode"
-  elseif data.covered == 0 then
-    hl = "NeocovUncovered"
-  elseif data.covered < data.branches then
-    hl = "NeocovPartial"
-  elseif data.covered == data.branches then
-    hl = "NeocovCovered"
-  end
+M.mark = function(buf, line, hl, decorations)
+  --TODO(JON): Make this flexible
+  decorations = decorations or cfg.style.decorations
 
   return vim.api.nvim_buf_set_extmark(buf, M.ns, line - 1, 0, {
-    strict = false,
-    end_col = -1,
-    -- right_gravity = false,
-    -- end_right_gravity = false,
+    end_row = line,
     invalidate = true,
+    sign_hl_group = hl,
+    strict = false,
     undo_restore = true,
-    -- sign_text = "▏",
-    -- sign_hl_group = "ErrorMsg",
+    virt_text_repeat_linebreak = true,
+    -- Options
+    virt_text_pos = "eol_right_align",
     virt_text = {
       { "▍", hl },
     },
-    -- virt_text = {{"▕", "ErrorMsg"}},
-    -- virt_text_pos = "eol_right_align",
-    virt_text_pos = "inline",
-    virt_text_repeat_linebreak = true,
+    -- sign_text = "▏",
+    hl_eol = false,
+    hl_group = hl:gsub("Fg", "Bg", 1),
   })
 end
 

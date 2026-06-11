@@ -109,10 +109,10 @@ function M:init(options)
 
   for _, thresh in pairs(opts.thresholds) do
     -- Resolve highlight links
-    local fg = vim.api.nvim_get_hl(0, { name = thresh.hl.fg }).fg or thresh.hl.fg
+    local fg = vim.api.nvim_get_hl(0, { name = thresh.hl.fg, link = false }).fg or thresh.hl.fg
     if type(fg) == "number" then fg = string.format("#%06x", fg) end
 
-    local bg = vim.api.nvim_get_hl(0, { name = thresh.hl.bg }).bg or thresh.hl.bg
+    local bg = vim.api.nvim_get_hl(0, { name = thresh.hl.bg, link = false }).bg or thresh.hl.bg
     if type(bg) == "number" then bg = string.format("#%06x", bg) end
 
     self.highlights[#self.highlights + 1] = {
@@ -155,6 +155,7 @@ function M:update_status()
     -- Get per-percentage highlighting
     local fmt = ""
     local eof = ""
+    --TODO(JON): :percent() called on nil?
     local hl = self:get_highlight(summary[scope]:percent())
     if hl then
       fmt = self:format_hl(hl)

@@ -27,6 +27,7 @@ Summary.new = function(conditions, branches, lines, blocks, functions, files)
     files = files or Ratio.new(),
   }
   setmetatable(self, Summary)
+  self.__index = Summary
   return self ---@diagnostic disable-line: return-type-mismatch
 end
 

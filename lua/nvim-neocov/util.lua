@@ -8,6 +8,18 @@ M.toint = function(str)
   return math.floor(tonumber(str))
 end
 
+---@param fg integer 0xRRGGBB
+---@param bg integer 0xRRGGBB
+---@param alpha number 0.0 (full bg) to 1.0 (full fg)
+---@return integer
+M.blend = function(fg, bg, alpha)
+  local bit = require("bit")
+  local r = math.floor(bit.band(bit.rshift(fg, 16), 0xFF) * alpha + bit.band(bit.rshift(bg, 16), 0xFF) * (1 - alpha))
+  local g = math.floor(bit.band(bit.rshift(fg, 8), 0xFF) * alpha + bit.band(bit.rshift(bg, 8), 0xFF) * (1 - alpha))
+  local b = math.floor(bit.band(fg, 0xFF) * alpha + bit.band(bg, 0xFF) * (1 - alpha))
+  return bit.bor(bit.lshift(r, 16), bit.lshift(g, 8), b)
+end
+
 --- Gets visible buffers backed by actual files (these are likely to be code, and therefore may want coverage annotations)
 ---@param bufs? int|int[] Use nil, `bufs` will be returned as a list when non-nil.
 ---@return int[] List of file buffers
