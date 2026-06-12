@@ -34,7 +34,6 @@ local default_options = {
     "${functions}",
   },
   empty_layout = "cov 󱔢",
-  --TODO(JON): Percent %% isn't working?
   formats = {
     conditions = "%C/%T (%.1f%%)",
     branches = "%C/%T (%.1f%%)",
@@ -155,14 +154,15 @@ function M:update_status()
     -- Get per-percentage highlighting
     local fmt = ""
     local eof = ""
-    --TODO(JON): :percent() called on nil?
     local hl = self:get_highlight(summary[scope]:percent())
     if hl then
       fmt = self:format_hl(hl)
       eof = self:get_default_hl()
     end
 
-    local part, substitutions = rep:gsub("${" .. scope .. "}", opts.icons[scope] .. " " .. summary[scope]:format(opts.formats[scope]))
+    --TODO(JON): % symbols in Ratio's string are not escaped enough
+    local ratio = summary[scope]:format(opts.formats[scope])
+    local part, substitutions = rep:gsub("${" .. scope .. "}", opts.icons[scope] .. " " .. ratio)
     if substitutions > 0 then rep = fmt .. part .. eof end
   end
 

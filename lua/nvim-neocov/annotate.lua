@@ -1,5 +1,5 @@
+local Coverage = require("nvim-neocov.coverage")
 local log = require("nvim-neocov.log")
-local cfg = require("nvim-neocov.config").config
 
 ---Uses extmarks to annotate coverage information in a file
 local M = {}
@@ -11,10 +11,57 @@ M.ns = vim.api.nvim_create_namespace("Neocov")
 ---@type table<int, bool> Hash key  = true to indicate a buffer is annotated
 M.cache = {}
 
---- Adds coverage annotations to one or more buffers
+---Gets the foreground highlight color warranted by a line's coverage
+---@type table<nvim-neocov.ThresholdKind, string>
+M.fg = {
+  nocode = "NeocovFgNoCode",
+  uncovered = "NeocovFgUncovered",
+  partial = "NeocovFgPartial",
+  covered = "NeocovFgCovered",
+}
+
+---Gets the background highlight color warranted by a line's coverage
+---@type table<nvim-neocov.ThresholdKind, string>
+M.bg = {
+  nocode = "NeocovBgNoCode",
+  uncovered = "NeocovBgUncovered",
+  partial = "NeocovBgPartial",
+  covered = "NeocovBgCovered",
+}
+
+--- Defines the Neocov plugin highlights.
+M.load_highlights = function()
+  vim.api.nvim_set_hl(0, "NeocovThresholdTerrible", { link = "DiagnosticError" })
+  vim.api.nvim_set_hl(0, "NeocovThresholdBad", { link = "DiagnosticError" })
+  vim.api.nvim_set_hl(0, "NeocovThresholdOk", { link = "DiagnosticWarn" })
+  vim.api.nvim_set_hl(0, "NeocovThresholdGood", { link = "DiagnosticOk" })
+  vim.api.nvim_set_hl(0, "NeocovThresholdPerfect", { link = "DiagnosticInfo" })
+
+  vim.api.nvim_set_hl(0, "NeocovFgUncovered", { link = "DiagnosticError" })
+  vim.api.nvim_set_hl(0, "NeocovFgPartial", { link = "DiagnosticWarn" })
+  vim.api.nvim_set_hl(0, "NeocovFgCovered", { link = "DiagnosticOk" })
+  vim.api.nvim_set_hl(0, "NeocovFgNoCode", { link = "Normal" })
+
+  local util = require("nvim-neocov.util")
+  local blend = 0.20
+  local bg = vim.api.nvim_get_hl(0, { name = "Normal", link = false }).bg or 0
+  local fg = 0
+
+  fg = vim.api.nvim_get_hl(0, { name = "NeocovFgUncovered", link = false }).fg or bg
+  vim.api.nvim_set_hl(0, "NeocovBgUncovered", { bg = util.blend(fg, bg, blend) })
+  fg = vim.api.nvim_get_hl(0, { name = "NeocovFgPartial", link = false }).fg or bg
+  vim.api.nvim_set_hl(0, "NeocovBgPartial", { bg = util.blend(fg, bg, blend) })
+  fg = vim.api.nvim_get_hl(0, { name = "NeocovFgCovered", link = false }).fg or bg
+  vim.api.nvim_set_hl(0, "NeocovBgCovered", { bg = util.blend(fg, bg, blend) })
+  fg = vim.api.nvim_get_hl(0, { name = "NeocovFgNoCode", link = false }).fg or bg
+  vim.api.nvim_set_hl(0, "NeocovBgNoCode", { bg = util.blend(fg, bg, blend) })
+end
+
+--- Adds coverage annotations to one or more buffers. Already annotated buffers are ignored, @see unload
 ---@param bufs? int|int[] Buffer to annotate, 0 for the current buffer, nil for all loaded buffers.
 ---@param cov nvim-neocov.Coverage Coverage data
-M.buffer = function(bufs, cov)
+---@param decorations table<nvim-neocov.ThresholdKind, nvim-neocov.Decoration[]> Style rules
+M.buffer = function(bufs, cov, decorations)
   bufs = require("nvim-neocov.util").get_file_bufs(bufs)
 
   for _, buf in ipairs(bufs) do
@@ -24,13 +71,15 @@ M.buffer = function(bufs, cov)
 
       local lines = cov.files[filename].lines
       for line = 1, vim.api.nvim_buf_line_count(buf) do
-        local hl = M.hl(lines[line] or { branches = 0, covered = 0, execution_count = 0 })
-        M.mark(buf, line, hl)
+        local threshold = Coverage.for_line(lines[line] or { branches = 0, covered = 0, execution_count = 0 })
+        M.mark(buf, line, {
+          fg = M.fg[threshold],
+          bg = M.bg[threshold],
+        }, decorations[threshold])
       end
       M.cache[buf] = true
     else
       log.tracef("Attempted to annotate invalid buffer %d", buf)
-      --TODO(JON): bwipeout event should probably M.unload(buf), use autocmd
       M.unload(buf)
     end
   end
@@ -64,49 +113,39 @@ M.unload = function(bufs)
   end
 end
 
----Gets the highlight color warranted by a line's coverage
----@param data nvim-neocov.LineCoverage Line data to annotate with
----@return string Highlight group to apply
-M.hl = function(data)
-  local hl = "Normal"
-  if data.branches == 0 then
-    hl = "NeocovFgNoCode"
-  elseif data.covered == 0 then
-    hl = "NeocovFgUncovered"
-  elseif data.covered < data.branches then
-    hl = "NeocovFgPartial"
-  elseif data.covered == data.branches then
-    hl = "NeocovFgCovered"
-  end
-  return hl
-end
-
---- Create an extmark for a given coverage line in the buffer
+--- Create extmarks for a given coverage line in the buffer
 ---@param buf int to annotate
 ---@param line int 1-indexed line in file
----@param hl string Highlight group to apply
----@param decorations? nvim-neocov.Decoration[] Style rules
----@return int mark Handle to the created extmark
+---@param hl nvim-neocov.Highlight Highlight group to apply
+---@param decorations nvim-neocov.Decoration[] Style rules
+---@return int[] marks Handles to the created extmarks
 M.mark = function(buf, line, hl, decorations)
-  --TODO(JON): Make this flexible
-  decorations = decorations or cfg.style.decorations
+  local marks = {}
+  for _, decore in ipairs(decorations) do
+    ---@type vim.api.keyset.set_extmark
+    local opts = {
+      end_row = line,
+      invalidate = true,
+      sign_hl_group = hl.fg,
+      strict = false,
+      undo_restore = true,
+      virt_text_repeat_linebreak = true,
+    }
 
-  return vim.api.nvim_buf_set_extmark(buf, M.ns, line - 1, 0, {
-    end_row = line,
-    invalidate = true,
-    sign_hl_group = hl,
-    strict = false,
-    undo_restore = true,
-    virt_text_repeat_linebreak = true,
-    -- Options
-    virt_text_pos = "eol_right_align",
-    virt_text = {
-      { "▍", hl },
-    },
-    -- sign_text = "▏",
-    hl_eol = false,
-    hl_group = hl:gsub("Fg", "Bg", 1),
-  })
+    if decore.kind == "sign" then
+      opts.sign_text = decore.text or "▍"
+    elseif decore.kind == "virt_text" then
+      opts.virt_text = { { (decore.text or "▍"), (hl.fg or "Normal") } }
+      opts.virt_text_pos = decore.pos or "inline"
+    elseif decore.kind == "highlight" then
+      opts.hl_mode = "blend"
+      opts.hl_group = hl.bg or "Normal"
+      opts.hl_eol = decore.hl_eol or true
+    end
+
+    if decore.kind ~= nil then marks[#marks + 1] = vim.api.nvim_buf_set_extmark(buf, M.ns, line - 1, 0, opts) end
+  end
+  return marks
 end
 
 return M

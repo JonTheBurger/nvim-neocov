@@ -4,6 +4,8 @@
 local M = {}
 
 local Summary = require("nvim-neocov.summary")
+local annotate = require("nvim-neocov.annotate")
+local cfg = require("nvim-neocov.config").config
 
 ----------------------------------------------------------------------------------------
 ---@section Globals
@@ -18,7 +20,6 @@ M._summaries_coverage = nil
 ---@type nvim-neocov.Coverage? Most recently loaded coverage report.
 M.coverage = nil
 
---TODO(JON): This only supports one report at a time. That doesn't work if you have C++ and python in the same codebase. Per-ft isn't perfect because C/C++ may share.
 ---@type nvim-neocov.CoverageFile? Path to file source for most recently loaded coverage report.
 M.file = nil
 
@@ -38,6 +39,31 @@ M.scope_names = {
   "functions",
   "files",
 }
+
+----------------------------------------------------------------------------------------
+---@endsection
+---@section AutoCommands
+----------------------------------------------------------------------------------------
+annotate.load_highlights()
+
+M.augroup = vim.api.nvim_create_augroup("Neocov", { clear = true })
+vim.api.nvim_create_autocmd("ColorScheme", {
+  desc = "Recalculate default Neocov Highlights when changing color schemes",
+  group = M.augroup,
+  callback = annotate.load_highlights,
+})
+vim.api.nvim_create_autocmd("BufWinEnter", {
+  desc = "Automatically load coverage data for files",
+  group = M.augroup,
+  callback = function(args)
+    if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then require("nvim-neocov").load() end
+  end,
+})
+vim.api.nvim_create_autocmd("BufWipeout", {
+  desc = "Mark wiped out buffers as no longer covered",
+  group = M.augroup,
+  callback = function(args) annotate.unload(args.buf) end,
+})
 
 ----------------------------------------------------------------------------------------
 ---@endsection
@@ -81,7 +107,6 @@ end
 --- Loads the coverage data and adds annotations the given buffers.
 ---@return nvim-neocov.Coverage?
 M.load = function()
-  -- TODO(POVIRK): make this an input
   -- Find
   if M.file == nil then
     M.file = M.find()
@@ -115,10 +140,11 @@ M.annotate = function(bufs)
   end
 
   -- Annotate
+  local decorations = require("nvim-neocov.config").config.style.decorations
   for _, buf in ipairs(bufs) do
     if not vim.tbl_contains(M.annotated, buf) then
       M.annotated[#M.annotated + 1] = buf
-      require("nvim-neocov.annotate").buffer(buf, M.coverage)
+      require("nvim-neocov.annotate").buffer(buf, M.coverage, decorations)
     end
   end
 end
@@ -126,7 +152,7 @@ end
 ---@param cov nvim-neocov.FileCoverage
 ---@return nvim-neocov.Summary
 M._file_summary = function(cov)
-  local summary = Summary:new()
+  local summary = Summary.new()
   summary.files.total = 1
 
   for _, line in pairs(cov.lines) do
@@ -162,7 +188,7 @@ M.summary = function(coverage, file)
   if M._file_summaries[file] ~= nil then return M._file_summaries[file] end
 
   -- Load
-  local summary = Summary:new()
+  local summary = Summary.new()
 
   if file == "" then
     -- Project Summary
@@ -185,7 +211,6 @@ M.clear = function()
   for _, buf in ipairs(M.annotated) do
     require("nvim-neocov.annotate").clear(buf)
   end
-  vim.api.nvim_create_augroup("Neocov", { clear = true })
 
   M.annotated = {}
   M.mtime = 0

@@ -9,25 +9,10 @@ M.validate = function(opts)
   return true, ""
 end
 
----Configures the plugin with the given options
----@param cfg nvim-neocov.Config
-M.apply = function(cfg)
-  vim.api.nvim_create_augroup("Neocov", { clear = true })
-  if #cfg.autoload > 0 then
-    vim.api.nvim_create_autocmd("BufWinEnter", {
-      group = "Neocov",
-      callback = function(args)
-        if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then require("nvim-neocov").load(args.buf) end
-      end,
-    })
-  end
-end
-
 ---Set up the plugin with custom settings
 ---@param opts? nvim-neocov.Options Plugin options
 M.setup = function(opts)
   M.config = vim.tbl_deep_extend("force", M.defaults, vim.g.nvim_neocov or {}, opts or {}) --[[@as nvim-neocov.Config]]
-  M.apply(M.config)
 end
 
 ---Read-only default user options
@@ -37,6 +22,43 @@ M.defaults = {
     sonarqube = require("nvim-neocov.parse.sonarqube").parse,
   },
   autoload = {},
+  style = {
+    decorations = {
+      covered = {
+        {
+          kind = "highlight",
+        },
+        {
+          kind = "virt_text",
+          pos = "eol_right_align",
+        },
+      },
+      partial = {
+        {
+          kind = "highlight",
+        },
+        {
+          kind = "virt_text",
+          pos = "eol_right_align",
+        },
+      },
+      uncovered = {
+        {
+          kind = "highlight",
+        },
+        {
+          kind = "virt_text",
+          pos = "eol_right_align",
+        },
+      },
+      nocode = {
+        {
+          kind = "virt_text",
+          pos = "eol_right_align",
+        },
+      },
+    },
+  },
 }
 
 M.setup()

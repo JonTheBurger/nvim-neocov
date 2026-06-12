@@ -2,6 +2,18 @@ local cfg = require("nvim-neocov.config").config
 local log = require("nvim-neocov.log")
 local util = require("nvim-neocov.util")
 
+---@class nvim-neocov.LineCoverage Coverage data for a single line
+---@field branches int Number of branches on the line
+---@field covered int Number of covered branches on the line
+---@field execution_count int Number of times the line was executed
+
+---@class nvim-neocov.FileCoverage Coverage data for a file.
+---@field lines table<int, nvim-neocov.LineCoverage> Line coverage data, 1 indexed.
+
+---@class nvim-neocov.CoverageFile File that coverage data can be loaded from.
+---@field path string Path to the coverage file on disk.
+---@field kind nvim-neocov.ParserKind Name of the parser to use when loading this coverage file.
+
 ---TODO(JON): This isn't close to having enough info for Summary
 ---@class nvim-neocov.Coverage Coverage data for multiple files.
 ---@field files table<string, nvim-neocov.FileCoverage> Coverage data for each file.
@@ -16,7 +28,6 @@ Coverage.__index = Coverage
 ---@field mtime int Time the last coverage file used to generate this coverage report was modified on disk
 ---@field data nvim-neocov.Coverage
 
----TODO(JON): What about nil file == global coverage?
 ---@class nvim-neocov.Cache
 ---@field files table<string, nvim-neocov.CachedCoverageFile>
 ---@field coverage table<string, nvim-neocov.CachedCoverage>
@@ -34,6 +45,24 @@ Coverage.cache = {
   files = {},
   coverage = {},
 }
+
+--- Determines threshold of coverage for a line
+---@param line_coverage nvim-neocov.LineCoverage
+---@return nvim-neocov.ThresholdKind
+Coverage.for_line = function(line_coverage)
+  ---@type nvim-neocov.ThresholdKind
+  local threshold = "nocode"
+  if line_coverage.branches == 0 then
+    threshold = "nocode"
+  elseif line_coverage.covered == 0 then
+    threshold = "uncovered"
+  elseif line_coverage.covered < line_coverage.branches then
+    threshold = "partial"
+  elseif line_coverage.covered == line_coverage.branches then
+    threshold = "covered"
+  end
+  return threshold
+end
 
 ---Load a coverage report from using the cache
 ---@param src_file string Path to source file to look up coverage for
@@ -142,3 +171,5 @@ end
 ---@param coverage_file string Path to existing file containing coverage data
 ---@return boolean True for success, false for failure
 Coverage.generate = function(source_file, kind, coverage_file) return false end
+
+return Coverage

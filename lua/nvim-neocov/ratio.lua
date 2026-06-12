@@ -13,7 +13,6 @@ Ratio.new = function(covered, total)
     total = total or 0,
   }
   setmetatable(self, Ratio)
-  self.__index = Ratio
   return self ---@diagnostic disable-line: return-type-mismatch
 end
 

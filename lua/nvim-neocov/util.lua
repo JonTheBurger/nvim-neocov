@@ -39,6 +39,71 @@ M.get_file_bufs = function(bufs)
   return bufs
 end
 
+--- Centers text lines horizontally
+---@param lines string[] Lines of text to center horizontally
+---@param width int Number of columns
+---@return string[] centered text
+M.center_horizontal = function(lines, width)
+  local result = {}
+  for _, line in ipairs(lines) do
+    local padding = math.floor((width - #line) / 2)
+    table.insert(result, string.rep(" ", padding) .. line)
+  end
+  return result
+end
+
+--- Centers text lines vertically and horizontally
+---@param lines string[] Lines of text to center
+---@param width int Number of columns
+---@param height int Number of rows
+---@return string[] Padded lines
+M.center = function(lines, width, height)
+  local top_pad = math.floor((height - #lines) / 2)
+  local padded = {}
+  for _ = 1, top_pad do
+    table.insert(padded, "")
+  end
+  for _, line in ipairs(M.center_horizontal(lines, width, height)) do
+    table.insert(padded, line)
+  end
+  return padded
+end
+
+---@class nvim-neocov.open_hover_opts
+---@field width? number Percentage of screen width in the range `(0.0,1.0]`
+---@field height? number Percentage of screen height in the range `(0.0,1.0]`
+---@field center? boolean `true` to center text, `false` (default) to leave unchanged.
+
+--- Open a hover with the given lines
+---@param lines string[] Lines
+---@param opts nvim-neocov.open_hover_opts
+---@return int, int Created Buffer,Window
+M.open_hover = function(lines, opts)
+  local width = math.floor(vim.o.columns * (opts.width or 0.5))
+  local height = math.floor(vim.o.lines * (opts.height or 0.5))
+  local row = math.floor((vim.o.lines - height) / 2)
+  local col = math.floor((vim.o.columns - width) / 2)
+
+  local buf = vim.api.nvim_create_buf(false, true)
+  if opts.center then lines = M.center(lines, width, height) end
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+
+  local win = vim.api.nvim_open_win(buf, true, {
+    relative = "editor",
+    width = width,
+    height = height,
+    row = row,
+    col = col,
+    style = "minimal",
+    border = "rounded",
+  })
+
+  vim.keymap.set("n", "q", "<cmd>close<cr>", { buffer = buf, nowait = true })
+  vim.keymap.set("n", "<Esc>", "<cmd>close<cr>", { buffer = buf, nowait = true })
+
+  return buf, win
+end
+
 --- Get the modified time of a file, or `nil` if the file did not exist or could not be read.
 ---@param path string File path
 ---@return int? Modified time in seconds
