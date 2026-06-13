@@ -13,6 +13,10 @@ end
 ---@param opts? nvim-neocov.Options Plugin options
 M.setup = function(opts)
   M.config = vim.tbl_deep_extend("force", M.defaults, vim.g.nvim_neocov or {}, opts or {}) --[[@as nvim-neocov.Config]]
+  -- local has_overseer, overseer = pcall(require, "overseer")
+  -- if has_overseer then
+  --   overseer.register_template("neocov.generate")
+  -- end
 end
 
 ---Read-only default user options

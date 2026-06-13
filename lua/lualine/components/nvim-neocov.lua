@@ -35,12 +35,12 @@ local default_options = {
   },
   empty_layout = "cov 󱔢",
   formats = {
-    conditions = "%C/%T (%.1f%%)",
-    branches = "%C/%T (%.1f%%)",
-    lines = "%C/%T (%.1f%%)",
-    blocks = "%C/%T (%.1f%%)",
-    functions = "%C/%T (%.1f%%)",
-    files = "%C/%T (%.1f%%)",
+    conditions = "%C/%T (%.1f％)",
+    branches = "%C/%T (%.1f％)",
+    lines = "%C/%T (%.1f％)",
+    blocks = "%C/%T (%.1f％)",
+    functions = "%C/%T (%.1f％)",
+    files = "%C/%T (%.1f％)",
   },
   thresholds = {
     {

@@ -1,4 +1,3 @@
-local cfg = require("nvim-neocov.config").config
 local log = require("nvim-neocov.log")
 local util = require("nvim-neocov.util")
 
@@ -10,15 +9,15 @@ local util = require("nvim-neocov.util")
 ---@class nvim-neocov.FileCoverage Coverage data for a file.
 ---@field lines table<int, nvim-neocov.LineCoverage> Line coverage data, 1 indexed.
 
----@class nvim-neocov.CoverageFile File that coverage data can be loaded from.
----@field path string Path to the coverage file on disk.
----@field kind nvim-neocov.ParserKind Name of the parser to use when loading this coverage file.
-
 ---TODO(JON): This isn't close to having enough info for Summary
 ---@class nvim-neocov.Coverage Coverage data for multiple files.
 ---@field files table<string, nvim-neocov.FileCoverage> Coverage data for each file.
 local Coverage = {}
 Coverage.__index = Coverage
+
+---@class nvim-neocov.CoverageFile File that coverage data can be loaded from.
+---@field path string Path to the coverage file on disk.
+---@field kind nvim-neocov.ParserKind Name of the parser to use when loading this coverage file.
 
 ---@class nvim-neocov.CachedCoverageFile
 ---@field mtime int Time the coverage file was last modified on disk
@@ -64,10 +63,13 @@ Coverage.for_line = function(line_coverage)
   return threshold
 end
 
----Load a coverage report from using the cache
+---TODO(JON): This whole thing might need to become a coroutine
+---Finds, generates, and loads a coverage report utilizing the cache
 ---@param src_file string Path to source file to look up coverage for
 ---@return nvim-neocov.Coverage?
 Coverage.load = function(src_file)
+  log.trace("Coverage.load", src_file)
+
   -- Ensure source file exists
   local src_mtime = util.mtime(src_file)
   if src_mtime == nil then
@@ -107,7 +109,7 @@ Coverage.load = function(src_file)
 
   -- Return cached data or generate
   if cached_file.mtime >= cov_mtime then return Coverage.cache.coverage[cached_file.file.path].data end
-  local coverage = Coverage.parse(cached_file.file.path, cached_file.file.kind, src_file)
+  local coverage = Coverage.parse(cached_file.file.path, cached_file.file.kind)
   if coverage == nil then return nil end
 
   -- Store results in cache
@@ -131,6 +133,7 @@ end
 ---@param src string? File the corresponding coverage report is being requested for, or nil if for the full project. If your project contains both C++ and Python, this is used to determine which kind of report to look up.
 ---@return nvim-neocov.CoverageFile? Path to the coverage file, or nil if no coverage file was found
 Coverage.find = function(src)
+  local cfg = require("nvim-neocov.config").config
   if type(cfg.file) == "string" then
     log.errorf('Invalid type `string` for `nvim-neocov.Options.file` Did you mean `{ path = "%s", kind = "..." }`?', cfg.file)
     return nil
@@ -158,18 +161,26 @@ end
 
 ---@param coverage_file string Path to existing file containing coverage data
 ---@param kind nvim-neocov.ParserKind Name of parser to use
----@param source_file? string Code file coverage is being requested for
 ---@return nvim-neocov.Coverage
-Coverage.parse = function(coverage_file, kind, source_file)
-  local coverage = cfg.parsers[kind](coverage_file, source_file)
+Coverage.parse = function(coverage_file, kind)
+  local cfg = require("nvim-neocov.config").config
+  local coverage = cfg.parsers[kind](coverage_file)
   vim.api.nvim_exec_autocmds("User", { pattern = "NeocovNewCoverageLoaded" })
   return coverage
 end
 
 ---@param source_file string Code file coverage is being requested for
 ---@param kind nvim-neocov.ParserKind Name of parser to use
----@param coverage_file string Path to existing file containing coverage data
 ---@return boolean True for success, false for failure
-Coverage.generate = function(source_file, kind, coverage_file) return false end
+Coverage.generate = function(source_file, kind)
+  local has_overseer, overseer = pcall(require, "overseer")
+  if has_overseer then
+    --TODO(JON): don't I need to pass args?
+    overseer.run_task({ name = "neocov: generate coverage", autostart = true })
+  else
+    --TODO(JON): Add a non-overseer workflow
+  end
+  return false
+end
 
 return Coverage

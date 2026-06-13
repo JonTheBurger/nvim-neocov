@@ -5,7 +5,6 @@ local M = {}
 
 local Summary = require("nvim-neocov.summary")
 local annotate = require("nvim-neocov.annotate")
-local cfg = require("nvim-neocov.config").config
 
 ----------------------------------------------------------------------------------------
 ---@section Globals
@@ -56,6 +55,7 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
   desc = "Automatically load coverage data for files",
   group = M.augroup,
   callback = function(args)
+    local cfg = require("nvim-neocov.config").config
     if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then require("nvim-neocov").load() end
   end,
 })

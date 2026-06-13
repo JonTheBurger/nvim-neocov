@@ -1,27 +1,47 @@
----@module "overseer.template"
 ---@type overseer.TemplateFileDefinition
+---@module "overseer.template"
 return {
-  name = "Generate Coverage",
-  builder = function()
-    -- Get formatting options using vim.fn.expand()
-    local full_path = vim.fn.expand("%:p") -- Full path: /path/to/script.py
-    local file_name = vim.fn.expand("%:t") -- File name only: script.py
-    local extension = vim.fn.expand("%:e") -- Extension only: py
-    local file_no_ext = vim.fn.expand("%:r") -- Path without extension: /path/to/script
+  name = "neocov: generate coverage",
+  builder = function(params)
+    local fullpath = vim.fn.expand("%:p")
+    if fullpath == "" then return { cmd = { "echo", "No active file found" } } end
+    local basename = vim.fn.expand("%:t")
 
-    -- Fallback safety check if the buffer is empty
-    if full_path == "" then return { cmd = { "echo", "No active file found" } } end
+    require("nvim-neocov.log").debugf("Staring generate coverage task for %s", basename)
+    local cfg = require("nvim-neocov.config").config
+    local cmd = cfg.cmd(fullpath)
+    --TODO(JON): Actually use the params
 
-    -- Construct your task definition dynamically
+    ---@module "overseer.task"
+    ---@type overseer.TaskDefinition
     return {
-      name = string.format("Execute %s", file_name),
-      cmd = { "python3", full_path },
-      components = { "default" },
+      name = "Generate & Show Coverage for " .. basename,
+      cmd = cmd.cmd,
+      cwd = cmd.cwd,
+      env = cmd.env,
+      metadata = {
+        coverage = nil,
+      },
+      components = {
+        -- "neocov.clear_coverage_markers",
+        { "neocov.on_complete_coverage", file = fullpath },
+        "default",
+      },
     }
   end,
-  condition = {
-    filetype = { "python" },
+  desc = "Generate coverage for a file and then load and annotate affected files",
+  tags = { "TEST" },
+  params = {
+    annotate = {
+      desc = "Annotate open buffers after generating the coverage",
+      type = "boolean",
+      default = true,
+    },
   },
+  --TODO(JON): Wire up filetypes
+  -- condition = {
+  --   filetype = {},
+  -- },
 }
 
 -- -- Safely check if overseer is installed before registering

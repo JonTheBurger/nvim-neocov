@@ -29,7 +29,7 @@ function Ratio:__add(other) return Ratio.new(self.covered + other.covered, self.
 ---@param fmt? string Form of "3/6 (50.0%)" by default. `%C` for covered, `%T` for total, `%f` for percent. Use e.g. `%.1f` for formatting percent with decimals.
 ---@return string
 function Ratio:format(fmt)
-  fmt = fmt or "%C/%T (%.1f%%)"
+  fmt = fmt or "%C/%T (%.1f％)"
   fmt = fmt:gsub("%%C", self.covered)
   fmt = fmt:gsub("%%T", self.total)
   return string.format(fmt, self:percent())

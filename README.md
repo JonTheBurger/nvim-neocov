@@ -17,10 +17,12 @@
 - -fprofile-abs-path -fcondition-coverage
 
 # TODO
-- Hover report
-- Multiple files, coverage per-file, etc.
-- Hover for coverage report
-- Evaluate `xq` instead of xml2lua (use nio and vim.json.decode())
 - Overseer integration
 - neotest integration
+- Hover of some kind
+- OEL virtual text for branches
+- Report
+- Multiple files, coverage per-file, etc.
+- Handle file paths in coverage not matching nvim paths
+- Evaluate `xq` instead of xml2lua (use nio and vim.json.decode())
 

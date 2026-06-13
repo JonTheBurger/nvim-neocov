@@ -42,9 +42,8 @@ end
 
 --- Parse sonarqube xml
 ---@param cov string Coverage file being parsed.
----@param src? string Information about the file where this request originated.
 ---@return nvim-neocov.Coverage report parsed from the file.
-M.parse = function(cov, src)
+M.parse = function(cov)
   local xml = require("nvim-neocov.xml").to_table(cov)
 
   ---@type nvim-neocov.Coverage

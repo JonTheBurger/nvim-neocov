@@ -3,7 +3,7 @@ vim.g.loaded_nvim_neocov = true
 
 vim.api.nvim_create_user_command("Neocov", function(opts)
   if opts.fargs[1] == "generate" then
-    --TODO(JON): generate
+    require("nvim-neocov.cmd").generate()
   elseif opts.fargs[1] == "load" then
     require("nvim-neocov").load()
     require("nvim-neocov").annotate()
@@ -17,6 +17,7 @@ vim.api.nvim_create_user_command("Neocov", function(opts)
       require("nvim-neocov.util").open_hover(lines, nil, nil, true)
     end
   else
+    require("nvim-neocov")
   end
 end, {
   nargs = "+",

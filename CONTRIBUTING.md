@@ -70,6 +70,7 @@ locally. Use `make docker.run` to diagnose environment leaks.
     2. Locally defined types
     3. "static" (non-method) functions
     4. methods (implicit this :functions)
+- Don't globally `require("neovim.config").config`
 
 ## Notes
 
