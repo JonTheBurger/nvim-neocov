@@ -95,7 +95,7 @@ Coverage.load = function(src_file)
   -- Ensure the coverage file exists on disk
   local cov_mtime = util.mtime(cached_file.file.path)
   if cov_mtime == nil or src_mtime > cov_mtime then
-    if Coverage.generate(src_file, cached_file.file.kind, cached_file.file.path) == false then
+    if Coverage.generate(src_file, cached_file.file.kind) == false then
       log.infof('Failed to generate coverage file "%s" for source "%s"', src_file)
       return nil
     else
@@ -175,8 +175,32 @@ end
 Coverage.generate = function(source_file, kind)
   local has_overseer, overseer = pcall(require, "overseer")
   if has_overseer then
-    --TODO(JON): don't I need to pass args?
-    overseer.run_task({ name = "neocov: generate coverage", autostart = true })
+    --TODO(JON): Asyncify
+    -- local future = require("nio").control.future()
+    overseer.run_task(
+      {
+        name = "neocov: generate coverage",
+        autostart = false,
+        params = {
+          file = source_file,
+          annotate = false,
+        },
+      },
+      ---@module "overseer.task"
+      ---@param task overseer.Task
+      function(task)
+        -- task:subscribe("on_complete", function(task)
+        --   if task.status == "SUCCESS" then
+        --     future.set(task)
+        --   else
+        --     future.set_error(task)
+        --   end
+        -- end)
+        task:start()
+      end
+    )
+    -- return future.wait().status == "SUCCESS"
+    return true
   else
     --TODO(JON): Add a non-overseer workflow
   end

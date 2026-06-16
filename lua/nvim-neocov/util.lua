@@ -39,6 +39,12 @@ M.get_file_bufs = function(bufs)
   return bufs
 end
 
+M.path_cmp = function(lhs, rhs)
+  if vim.fn.fnamemodify(lhs, ":p") == vim.fn.fnamemodify(rhs, ":p") then return true end
+
+  return false
+end
+
 --- Centers text lines horizontally
 ---@param lines string[] Lines of text to center horizontally
 ---@param width int Number of columns

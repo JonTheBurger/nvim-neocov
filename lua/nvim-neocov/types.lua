@@ -34,10 +34,11 @@
 ---TODO(JON): Should this be per-ft?
 ---@field file? nvim-neocov.CoverageFile|nvim-neocov.CoverageFile[]|fun(src: string?): nvim-neocov.CoverageFile Path(s) or function used to find path(s) to the coverage report.
 ---@field cmd? fun(src: string?): nvim-neocov.CoverageCommand Command used to generate coverage for a file. If file is nil, generates for the full project
----@field ft? string[] Supported file types
+---@field ft? string[] Supported file types.
 ---@field style? nvim-neocov.Options.Style How coverage data should be displayed
----@field autoload? string[] filetypes to auto-load coverage data for, use `:set filetype?` to detect for a given file.
 ---@field parsers? table<string, fun(cov: string): nvim-neocov.Coverage> Additional custom parsers. We recommend naming these in ALL_CAPS to avoid name clashes.
+---@field path_cmp? fun(abspath: string, covpath: string): boolean Compares absolute paths on disk to paths referenced in a coverage report. Coverage reports may use paths relative to cwd where coverage was generated, output file path, input file path, etc.
+---@field autoload? string[] filetypes to auto-load coverage data for, use `:set filetype?` to detect for a given file.
 
 ---TODO(JON): Re-copy when done
 ---@class nvim-neocov.Config.Style Resolved display options.
@@ -46,7 +47,7 @@
 ---TODO(JON): Re-copy when done
 ---@class nvim-neocov.Config Resolved options.
 ---@field file nvim-neocov.CoverageFile|nvim-neocov.CoverageFile[]|fun(src: string?): nvim-neocov.CoverageFile Path(s) or function used to find path(s) to the coverage report.
----@field cmd fun(src: string?): nvim-neocov.CoverageCommand Command used to generate coverage for a file. If file is nil, generates for the full project
+---@field cmd fun(src: string?): nvim-neocov.CoverageCommand? Command used to generate coverage for a file. If file is nil, generates for the full project. If a nil command is returned, no suitable coverage command was found.
 ---@field ft string[] Supported file types
 ---@field style nvim-neocov.Config.Style How coverage data should be displayed
 ---@field autoload string[] filetypes to auto-load coverage data for, use `:set filetype?` to detect for a given file.

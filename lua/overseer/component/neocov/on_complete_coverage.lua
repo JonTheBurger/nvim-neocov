@@ -9,19 +9,6 @@ return {
       type = "string",
       validate = function(v) return require("nvim-neocov.util").mtime(v) ~= nil end,
     },
-    -- coverage_file = {
-    --   desc = "Path to the coverage file to load",
-    --   type = "string",
-    --   -- default = "",
-    -- },
-    -- kind = {
-    --   desc = "Parser to use for the coverage file",
-    --   type = "string",
-    --   default = "lcov",
-    --   validate = function(v)
-    --     return require("nvim-neocov.config").config.parsers[v] ~= nil
-    --   end,
-    -- },
   },
   editable = false,
   serializable = true,
@@ -32,19 +19,15 @@ return {
       ---@param result table A result table.
       on_complete = function(_self, _task, status, _result)
         if status ~= "SUCCESS" then return end
-        --TODO(JON): We need path mapping really badly!
         local cov = require("nvim-neocov.coverage").load(params.file)
         if cov == nil then
           vim.notify("JON THIS SHOULDN'T HAPPEN")
           return
         end
+        --TODO(JON): We need path mapping really badly!
+        -- require("nvim-neocov").clear()
         local cfg = require("nvim-neocov.config").config
         require("nvim-neocov.annotate").buffer(nil, cov, cfg.style.decorations)
-      end,
-      --- Called when the task command has completed
-      ---@param code number The process exit code
-      on_exit = function(_self, _task, _code)
-        -- Called when the task command has completed
       end,
     }
   end,
