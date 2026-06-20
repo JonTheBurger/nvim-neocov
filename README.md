@@ -1,8 +1,6 @@
 --------------------------------------------------------------------------------
 
-- vim.filetype.match({ filename = src_file })
-
-- vim.print(vim.fn.expand("%:.")) == vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":.")
+- vim.prit(vim.fn.expand("%:.")) == vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":.")
 - vim.filetype.match({ filename = "/path/to/file.cpp" })
 - vim.fn.bufnr("/path/to/file")
 
@@ -16,17 +14,23 @@
 - gcov -s /home/jon/Projects/c -lgxp CMakeFiles/ehsh.dir/src/ehsh.c.gcda
 - -fprofile-abs-path -fcondition-coverage
 
-# TODO
+# Test
 - neotest integration
-- Hover of some kind
-- OEL virtual text for branches
-- Report
+
+# TODO
 - Multiple files, coverage per-file, etc.
+- Locking for generating code coverage (do not try and generate an output file while it is already being generated)
+    - User-invoked should probably override this, e.g. opts = opts or { force = true }
 - Handle file paths in coverage not matching nvim paths
+- Report
 - Evaluate `xq` instead of xml2lua (use nio and vim.json.decode())
 
-
-
+# Refactor
+- Use require("nvim-neocov.config").get() instead of config.config
+- Move all of the `nvim-neocov` modules to `neocov`
+- Annotate @private
+- More ergonomic config
+- Create a file_exists function and use that instead of `mtime` and `fs_stat`
 
 ## Overseer
 
@@ -84,3 +88,11 @@
 --     end,
 --   })
 -- end)
+
+# Neotest
+-- require("neotest").setup({
+--   consumers = {
+--     coverage = require("neotest.consumers.nvim-neocov"),
+--   },
+-- })
+

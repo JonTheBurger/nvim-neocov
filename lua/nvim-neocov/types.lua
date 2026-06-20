@@ -11,14 +11,16 @@
 ---| "sign" # Use the sign column - does not move when text is updated.
 ---| "virt_text" # Use virtual text extmarks - move as text is updated.
 ---| "highlight" # Highlight the line.
+---| "branch" # Adds branch count virtual text at the end of lines containing branches.
 
 ---@class nvim-neocov.Highlight
----@field fg? string Foreground highlight, or the name of another highlight to link to.
----@field bg? string Background highlight, or the name of another highlight to link to.
+---@field fg? string Foreground-only highlight, or the name of another highlight to link to.
+---@field bg? string Background-only highlight, or the name of another highlight to link to.
+---@field hl? string Background+Foreground highlight, or the name of another highlight to link to.
 
 ---@class nvim-neocov.Decoration Annotation style used to display coverage.
 ---@field kind? nvim-neocov.DecorationKind How a coverage line should be annotated. Nil to not decorate.
----@field text? string When `kind` is "sign" or "virt_text", denotes gutter symbol; should not exceed 2 characters.
+---@field text? string When `kind` is "sign", "virt_text", or "branch", denotes gutter symbol; should not exceed 2 characters.
 ---@field pos? nvim-neocov.VirtTextPos When `kind` is "virt_text", denotes position of rendered virtual text.
 ---@field hl_eol? boolean When `kind` is "highlight", `true` (default) continues highlighting until the edge of the window, `false` highlights only the text.
 

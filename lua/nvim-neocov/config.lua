@@ -36,6 +36,9 @@ M.defaults = {
           kind = "virt_text",
           pos = "eol_right_align",
         },
+        {
+          kind = "branch",
+        },
       },
       partial = {
         {
@@ -44,6 +47,9 @@ M.defaults = {
         {
           kind = "virt_text",
           pos = "eol_right_align",
+        },
+        {
+          kind = "branch",
         },
       },
       uncovered = {
@@ -54,6 +60,9 @@ M.defaults = {
           kind = "virt_text",
           pos = "eol_right_align",
         },
+        {
+          kind = "branch",
+        },
       },
       nocode = {
         {
@@ -63,7 +72,12 @@ M.defaults = {
       },
     },
   },
+  path_cmp = require("nvim-neocov.util").path_cmp,
 }
+
+--- Gets the current configuration
+---@return nvim-neocov.Config
+M.get = function() return M.config end
 
 M.setup()
 

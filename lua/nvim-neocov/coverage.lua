@@ -129,15 +129,23 @@ Coverage.unload = function()
   Coverage.cache.files = {}
 end
 
+---Calculates the corresponding coverage output file name/kind for a given input file path. This file may not yet exist on disk.
+---@param src string? File the corresponding coverage report is being requested for, or nil if for the full project. If your project contains both C++ and Python, this is used to determine which kind of report to look up.
+---@return nvim-neocov.CoverageFile
+Coverage.file = function(src)
+  --TODO(JON1): Move Coverage.find cfg.file block here, use this in cmd.generate and Coverage.generate
+end
+
 --- Locates a coverage file on disk
 ---@param src string? File the corresponding coverage report is being requested for, or nil if for the full project. If your project contains both C++ and Python, this is used to determine which kind of report to look up.
 ---@return nvim-neocov.CoverageFile? Path to the coverage file, or nil if no coverage file was found
 Coverage.find = function(src)
-  local cfg = require("nvim-neocov.config").config
+  local cfg = require("nvim-neocov.config").get()
   if type(cfg.file) == "string" then
     log.errorf('Invalid type `string` for `nvim-neocov.Options.file` Did you mean `{ path = "%s", kind = "..." }`?', cfg.file)
     return nil
   elseif type(cfg.file) == "function" then
+    -- TODO(JON): This should return nil if not found
     return cfg.file(src)
   end
 
@@ -170,9 +178,10 @@ Coverage.parse = function(coverage_file, kind)
 end
 
 ---@param source_file string Code file coverage is being requested for
----@param kind nvim-neocov.ParserKind Name of parser to use
+---@param kind? nvim-neocov.ParserKind Name of parser to use
 ---@return boolean True for success, false for failure
 Coverage.generate = function(source_file, kind)
+  kind = kind or require("nvim-neocov.config").config.file
   local has_overseer, overseer = pcall(require, "overseer")
   if has_overseer then
     --TODO(JON): Asyncify
