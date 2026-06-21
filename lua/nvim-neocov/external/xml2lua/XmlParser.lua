@@ -286,7 +286,9 @@ local function parseNormalTag(self, xml, f)
         -- Shouldn't have any attributes in endtag
         err(self, string.format("%s (/%s)", self._errstr.endTagErr, tag.name), f.pos)
       end
-      if table.remove(self._stack) ~= tag.name then err(self, string.format("%s (/%s)", self._errstr.unmatchedTagErr, tag.name), f.pos) end
+      if table.remove(self._stack) ~= tag.name then
+        err(self, string.format("%s (/%s)", self._errstr.unmatchedTagErr, tag.name), f.pos)
+      end
       self.handler:endtag(tag, f.match, f.endMatch)
     end
   else
@@ -351,7 +353,9 @@ end
 --@param parseAttributes indicates if tag attributes should be parsed or not.
 --       If omitted, the default value is true.
 function XmlParser:parse(xml, parseAttributes)
-  if type(self) ~= "table" or getmetatable(self) ~= XmlParser then error("You must call xmlparser:parse(parameters) instead of xmlparser.parse(parameters)") end
+  if type(self) ~= "table" or getmetatable(self) ~= XmlParser then
+    error("You must call xmlparser:parse(parameters) instead of xmlparser.parse(parameters)")
+  end
 
   if parseAttributes == nil then parseAttributes = true end
 

@@ -16,13 +16,14 @@
 
 # Test
 - neotest integration
+- Handle file paths in coverage not matching nvim paths
 
 # TODO
 - Multiple files, coverage per-file, etc.
 - Locking for generating code coverage (do not try and generate an output file while it is already being generated)
     - User-invoked should probably override this, e.g. opts = opts or { force = true }
-- Handle file paths in coverage not matching nvim paths
 - Report
+- Decision coverage
 - Evaluate `xq` instead of xml2lua (use nio and vim.json.decode())
 
 # Refactor

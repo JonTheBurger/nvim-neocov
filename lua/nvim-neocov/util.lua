@@ -25,6 +25,7 @@ end
 ---@return int[] List of file buffers
 M.get_file_bufs = function(bufs)
   if type(bufs) == "number" then
+    if bufs == 0 then bufs = vim.api.nvim_get_current_buf() end
     return { bufs }
   elseif type(bufs) == "table" then
     return bufs
@@ -37,6 +38,26 @@ M.get_file_bufs = function(bufs)
     if vim.bo[buf].buftype == "" then table.insert(bufs, buf) end
   end
   return bufs
+end
+
+--- Attempts to transform a path into an abspath by checking if the abspath exits.
+---@param path string|int path to transform (or buffer number)
+---@param roots? string[] additional search paths to prepend. This is useful when
+---coverage files use a different root than your nvim PWD.
+---@return string absolute path. Will either be an existing file on disk, or defaults to
+---PWD-relative abspath.
+M.to_abspath = function(path, roots)
+  if type(path) == "number" then path = vim.api.nvim_buf_get_name(path) end
+  local abspath = vim.fn.fnamemodify(path, ":p")
+  if M.file_exists(abspath) then return abspath end
+
+  roots = roots or {}
+  for _, root in ipairs(roots) do
+    local rerooted = vim.fs.joinpath(root, path)
+    if M.file_exists(rerooted) then return rerooted end
+  end
+
+  return abspath
 end
 
 M.path_cmp = function(lhs, rhs)
@@ -82,9 +103,10 @@ end
 
 --- Open a hover with the given lines
 ---@param lines string[] Lines
----@param opts nvim-neocov.open_hover_opts
+---@param opts? nvim-neocov.open_hover_opts
 ---@return int, int Created Buffer,Window
 M.open_hover = function(lines, opts)
+  opts = opts or {}
   local width = math.floor(vim.o.columns * (opts.width or 0.5))
   local height = math.floor(vim.o.lines * (opts.height or 0.5))
   local row = math.floor((vim.o.lines - height) / 2)
@@ -117,6 +139,14 @@ M.mtime = function(path)
   local stat = vim.uv.fs_stat(path)
   if stat == nil then return nil end
   return stat.mtime.sec
+end
+
+--- Check if a file exists on disk
+---@param path string File path
+---@return bool Exists as a file if true
+M.file_exists = function(path)
+  local stat = vim.uv.fs_stat(path)
+  return stat ~= nil and stat.type == "file"
 end
 
 return M

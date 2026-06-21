@@ -184,7 +184,10 @@ function xml2lua.addTagValueAttr(tagName, tagValue, attrTable, level)
   if tagValue == "" then
     table.insert(xml2lua.xmltb, spaces .. "<" .. tagName .. attrStr .. "/>")
   else
-    table.insert(xml2lua.xmltb, spaces .. "<" .. tagName .. attrStr .. ">" .. tostring(tagValue) .. "</" .. tagName .. ">")
+    table.insert(
+      xml2lua.xmltb,
+      spaces .. "<" .. tagName .. attrStr .. ">" .. tostring(tagValue) .. "</" .. tagName .. ">"
+    )
   end
 end
 

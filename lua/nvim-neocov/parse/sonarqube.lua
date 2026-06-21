@@ -1,6 +1,6 @@
 local M = {}
 
-local toint = require("nvim-neocov.util").toint
+local util = require("nvim-neocov.util")
 
 ---@param file any SonarQube XML <file> element
 ---@return nvim-neocov.LineCoverage[] line from element
@@ -27,11 +27,11 @@ M.parse_lines = function(file)
         covered = 0
       end
     else
-      branches = toint(line._attr.branchesToCover)
-      covered = toint(line._attr.coveredBranches)
+      branches = util.toint(line._attr.branchesToCover)
+      covered = util.toint(line._attr.coveredBranches)
     end
 
-    lines[toint(line._attr.lineNumber)] = {
+    lines[util.toint(line._attr.lineNumber)] = {
       branches = branches,
       covered = covered,
     }
@@ -60,7 +60,14 @@ M.parse = function(cov)
     return report
   end
   if xml.coverage._attr.version ~= "1" then
-    vim.notify("Neocov sonarqube: " .. cov .. " Unsupported SonarQube XML verison: " .. tostring(xml.coverage._attr.version) .. " expected 1", vim.log.levels.ERROR)
+    vim.notify(
+      "Neocov sonarqube: "
+        .. cov
+        .. " Unsupported SonarQube XML verison: "
+        .. tostring(xml.coverage._attr.version)
+        .. " expected 1",
+      vim.log.levels.ERROR
+    )
     return report
   end
 
@@ -71,7 +78,7 @@ M.parse = function(cov)
   end
 
   for _, file in ipairs(files) do
-    report.files[file._attr.path] = { lines = M.parse_lines(file) }
+    report.files[util.to_abspath(file._attr.path)] = { lines = M.parse_lines(file) }
   end
 
   return report

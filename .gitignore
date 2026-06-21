@@ -1,3 +1,5 @@
+.cache/
+build/
 .luarocks/
 luacov.report.html
 luacov.stats

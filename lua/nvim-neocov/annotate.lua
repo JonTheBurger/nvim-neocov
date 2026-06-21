@@ -1,5 +1,6 @@
 local Coverage = require("nvim-neocov.coverage")
 local log = require("nvim-neocov.log")
+local util = require("nvim-neocov.util")
 
 ---Uses extmarks to annotate coverage information in a file
 local M = {}
@@ -51,11 +52,10 @@ M.load_highlights = function()
   vim.api.nvim_set_hl(0, "NeocovFgCovered", { link = "DiagnosticOk" })
   vim.api.nvim_set_hl(0, "NeocovFgNoCode", { link = "Normal" })
 
-  local util = require("nvim-neocov.util")
   local blend = 0.20
   local bg = vim.api.nvim_get_hl(0, { name = "Normal", link = false }).bg or 0
-  local fg = 0
   local txt = vim.api.nvim_get_hl(0, { name = "Comment", link = false }).fg or 0
+  local fg
 
   fg = vim.api.nvim_get_hl(0, { name = "NeocovFgUncovered", link = false }).fg or bg
   vim.api.nvim_set_hl(0, "NeocovBgUncovered", { bg = util.blend(fg, bg, blend) })
@@ -82,8 +82,9 @@ M.buffer = function(bufs, cov, decorations)
   bufs = require("nvim-neocov.util").get_file_bufs(bufs)
 
   for _, buf in ipairs(bufs) do
+    if buf == 0 then buf = vim.api.nvim_get_current_buf() end
     if vim.api.nvim_buf_is_loaded(buf) and M.cache[buf] == nil then
-      local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(buf), ":.")
+      local filename = util.to_abspath(buf)
       if cov.files[filename] == nil then return end
 
       local lines = cov.files[filename].lines
@@ -112,6 +113,7 @@ M.clear = function(bufs)
   bufs = require("nvim-neocov.util").get_file_bufs(bufs)
 
   for _, buf in ipairs(bufs) do
+    if buf == 0 then buf = vim.api.nvim_get_current_buf() end
     if vim.api.nvim_buf_is_loaded(buf) then
       vim.api.nvim_buf_clear_namespace(buf, M.ns, 0, -1)
     else
@@ -128,6 +130,7 @@ M.unload = function(bufs)
   else
     bufs = require("nvim-neocov.util").get_file_bufs(bufs)
     for _, buf in ipairs(bufs) do
+      if buf == 0 then buf = vim.api.nvim_get_current_buf() end
       M.cache[buf] = nil
     end
   end
@@ -157,8 +160,20 @@ M.mark = function(buf, line, coverage, hl, decorations)
     if kind == "sign" then
       opts.sign_text = decore.text or "▍"
     elseif kind == "virt_text" then
-      opts.virt_text = { { (decore.text or "▍"), (hl.fg or "Normal") } }
       opts.virt_text_pos = decore.pos or "inline"
+      local text = decore.text
+      if text == nil then
+        if
+          opts.virt_text_pos == "eol"
+          or opts.virt_text_pos == "eol_right_align"
+          or opts.virt_text_pos == "right_align"
+        then
+          text = "▐"
+        else
+          text = "▍"
+        end
+      end
+      opts.virt_text = { { text, (hl.fg or "Normal") } }
     elseif kind == "highlight" then
       opts.hl_mode = "blend"
       opts.hl_group = hl.bg or "Normal"
@@ -176,6 +191,36 @@ M.mark = function(buf, line, coverage, hl, decorations)
     if kind ~= nil then marks[#marks + 1] = vim.api.nvim_buf_set_extmark(buf, M.ns, line - 1, 0, opts) end
   end
   return marks
+end
+
+--- Adds coverage lines to the quickfix list (:copen)
+---@param coverage nvim-neocov.Coverage
+---@param thresholds? nvim-neocov.ThresholdKind|nvim-neocov.ThresholdKind[]
+---@param bufs? int[]|int
+M.qflist = function(coverage, thresholds, bufs)
+  if thresholds == nil then thresholds = { "uncovered", "partial" } end
+  if type(thresholds) == "string" then thresholds = { thresholds } end
+  bufs = util.get_file_bufs(bufs or 0)
+
+  vim.fn.setqflist({}, " ")
+  for _, buf in ipairs(bufs) do
+    local cov = coverage.files[util.to_abspath(buf)]
+    if cov ~= nil then
+      for line, data in pairs(cov.lines) do
+        if vim.tbl_contains(thresholds, Coverage.for_line(data)) then
+          vim.fn.setqflist({
+            {
+              bufnr = buf,
+              lnum = line,
+              text = string.format("%s/%s", data.covered, data.branches),
+            },
+          }, "a")
+        end
+      end
+    end
+  end
+
+  vim.cmd.copen()
 end
 
 return M

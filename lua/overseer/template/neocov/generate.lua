@@ -22,7 +22,9 @@ return {
   },
   builder = function(params)
     local fullpath = vim.fn.fnamemodify(params.file or vim.fn.expand("%"), ":p")
-    if require("nvim-neocov.util").mtime(fullpath) == nil then return { cmd = { "echo", string.format('Cannot generate coverage for non-existent file "%s"', fullpath) } } end
+    if require("nvim-neocov.util").mtime(fullpath) == nil then
+      return { cmd = { "echo", string.format('Cannot generate coverage for non-existent file "%s"', fullpath) } }
+    end
 
     local cmd = cfg.cmd(fullpath)
     if cmd == nil then return { cmd = { "echo", string.format('Ignoring coverage request for "%s"', fullpath) } } end

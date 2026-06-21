@@ -12,8 +12,17 @@ local util = require("nvim-neocov.util")
 ---TODO(JON): This isn't close to having enough info for Summary
 ---@class nvim-neocov.Coverage Coverage data for multiple files.
 ---@field files table<string, nvim-neocov.FileCoverage> Coverage data for each file.
+---file **MUST** be an absolute path!
 local Coverage = {}
 Coverage.__index = Coverage
+
+Coverage.new = function()
+  local self = {
+    files = {},
+  }
+  setmetatable(self, Coverage)
+  return self
+end
 
 ---@class nvim-neocov.CoverageFile File that coverage data can be loaded from.
 ---@field path string Path to the coverage file on disk.
@@ -28,22 +37,23 @@ Coverage.__index = Coverage
 ---@field data nvim-neocov.Coverage
 
 ---@class nvim-neocov.Cache
----@field files table<string, nvim-neocov.CachedCoverageFile>
----@field coverage table<string, nvim-neocov.CachedCoverage>
-
-Coverage.new = function()
-  local self = {
-    files = {},
-  }
-  setmetatable(self, Coverage)
-  return self
-end
-
+---@field files table<string, nvim-neocov.CachedCoverageFile> Mapping of source code file to its corresponding coverage
+---data file
+---@field coverage table<string, nvim-neocov.CachedCoverage> Mapping of coverage data file to its corresponding coverage
 ---@type nvim-neocov.Cache
 Coverage.cache = {
   files = {},
   coverage = {},
 }
+
+--- Gets the coverage data for source_file, if possible
+---@param source_file string Name of file to get coverage information for
+---@return nvim-neocov.FileCoverage?
+Coverage.for_file = function(source_file)
+  local coverage = Coverage.load(source_file)
+  if coverage == nil then return nil end
+  return coverage.files[source_file]
+end
 
 --- Determines threshold of coverage for a line
 ---@param line_coverage nvim-neocov.LineCoverage
@@ -65,22 +75,23 @@ end
 
 ---TODO(JON): This whole thing might need to become a coroutine
 ---Finds, generates, and loads a coverage report utilizing the cache
----@param src_file string Path to source file to look up coverage for
+---@param source_file string Path to source file to look up coverage for
 ---@return nvim-neocov.Coverage?
-Coverage.load = function(src_file)
-  log.trace("Coverage.load", src_file)
+Coverage.load = function(source_file)
+  source_file = vim.fn.fnamemodify(source_file, ":p")
+  log.trace("Coverage.load", source_file)
 
   -- Ensure source file exists
-  local src_mtime = util.mtime(src_file)
+  local src_mtime = util.mtime(source_file)
   if src_mtime == nil then
-    log.infof('Source file "%s" does not exist', src_file)
+    log.infof('Source file "%s" does not exist', source_file)
     return nil
   end
 
   -- Look up what the corresponding coverage file should be
-  local cached_file = Coverage.cache.files[src_file]
+  local cached_file = Coverage.cache.files[source_file]
   if cached_file == nil then
-    local cov_file = Coverage.find(src_file)
+    local cov_file = Coverage.find(source_file)
     if cov_file == nil then
       log.infof('Could not determine a corresponding coverage file for source "%s"')
       return nil
@@ -95,13 +106,13 @@ Coverage.load = function(src_file)
   -- Ensure the coverage file exists on disk
   local cov_mtime = util.mtime(cached_file.file.path)
   if cov_mtime == nil or src_mtime > cov_mtime then
-    if Coverage.generate(src_file, cached_file.file.kind) == false then
-      log.infof('Failed to generate coverage file "%s" for source "%s"', src_file)
+    if Coverage.generate(source_file, cached_file.file.kind) == false then
+      log.infof('Failed to generate coverage file "%s" for source "%s"', source_file)
       return nil
     else
       cov_mtime = util.mtime(cached_file.file.path)
       if cov_mtime == nil then
-        log.infof('Generator did not produce coverage file "%s" for source "%s"', src_file)
+        log.infof('Generator did not produce coverage file "%s" for source "%s"', source_file)
         return nil
       end
     end
@@ -114,11 +125,11 @@ Coverage.load = function(src_file)
 
   -- Store results in cache
   cached_file.mtime = cov_mtime
-  Coverage.cache.coverage[cached_file.file.path] = {
+  Coverage.cache.coverage[cached_file.file.path] = { -- TODO(JON): SHOULD THIS BE ABSPATH???
     mtime = cov_mtime,
     data = coverage,
   }
-  Coverage.cache.files[src_file] = cached_file
+  Coverage.cache.files[source_file] = cached_file
 
   return coverage
 end
@@ -129,29 +140,29 @@ Coverage.unload = function()
   Coverage.cache.files = {}
 end
 
----Calculates the corresponding coverage output file name/kind for a given input file path. This file may not yet exist on disk.
----@param src string? File the corresponding coverage report is being requested for, or nil if for the full project. If your project contains both C++ and Python, this is used to determine which kind of report to look up.
+---Calculates the corresponding prospective coverage output file name/kind for a given input file path.
+---This file may not yet exist on disk.
+---@param src string? File the corresponding coverage report is being requested for, or nil if for the full project.
+---If your project contains both C++ and Python, this is used to determine which kind of report to look up.
 ---@return nvim-neocov.CoverageFile
 Coverage.file = function(src)
-  --TODO(JON1): Move Coverage.find cfg.file block here, use this in cmd.generate and Coverage.generate
-end
-
---- Locates a coverage file on disk
----@param src string? File the corresponding coverage report is being requested for, or nil if for the full project. If your project contains both C++ and Python, this is used to determine which kind of report to look up.
----@return nvim-neocov.CoverageFile? Path to the coverage file, or nil if no coverage file was found
-Coverage.find = function(src)
   local cfg = require("nvim-neocov.config").get()
   if type(cfg.file) == "string" then
-    log.errorf('Invalid type `string` for `nvim-neocov.Options.file` Did you mean `{ path = "%s", kind = "..." }`?', cfg.file)
-    return nil
+    log.errorf(
+      'Invalid type `string` for `nvim-neocov.Options.file` Did you mean `{ path = "%s", kind = "..." }`?" .. \
+      " Assuming `kind = "lcov"`.',
+      cfg.file
+    )
+    return { path = cfg.file, kind = "lcov" }
   elseif type(cfg.file) == "function" then
-    -- TODO(JON): This should return nil if not found
     return cfg.file(src)
   end
 
   ---@diagnostic disable-next-line: assign-type-mismatch
   ---@type nvim-neocov.CoverageFile[]
   local files = (#cfg.file > 0) and cfg.file or { cfg.file }
+
+  -- Prefer to return existing files
   for _, file in ipairs(files) do
     if file.path:find("%*") then
       -- Glob support
@@ -164,6 +175,22 @@ Coverage.find = function(src)
     end
   end
 
+  -- Else return the first non-glob
+  for _, file in ipairs(files) do
+    if not file.path:find("%*") then return file end
+  end
+
+  -- As a last resort, accept the glob
+  return files[1]
+end
+
+--- Locates a coverage file on disk
+---@param src string? File the corresponding coverage report is being requested for, or nil if for the full project.
+---If your project contains both C++ and Python, this is used to determine which kind of report to look up.
+---@return nvim-neocov.CoverageFile? Path to the coverage file, or nil if no coverage file was found
+Coverage.find = function(src)
+  local file = Coverage.file(src)
+  if util.file_exists(file.path) then return file end
   return nil
 end
 
@@ -181,7 +208,7 @@ end
 ---@param kind? nvim-neocov.ParserKind Name of parser to use
 ---@return boolean True for success, false for failure
 Coverage.generate = function(source_file, kind)
-  kind = kind or require("nvim-neocov.config").config.file
+  -- kind = kind or require("nvim-neocov.config").config.file
   local has_overseer, overseer = pcall(require, "overseer")
   if has_overseer then
     --TODO(JON): Asyncify
@@ -215,5 +242,41 @@ Coverage.generate = function(source_file, kind)
   end
   return false
 end
+
+---Go to the next/prev line in the current file matching the given threshold(s)
+---@param direction "next"|"prev"
+---@param thresholds? nvim-neocov.ThresholdKind|nvim-neocov.ThresholdKind[]
+Coverage.jump = function(direction, thresholds)
+  if thresholds == nil then thresholds = { "uncovered", "partial" } end
+  if type(thresholds) == "string" then thresholds = { thresholds } end
+  local file = vim.api.nvim_buf_get_name(0)
+  local cov = Coverage.for_file(file)
+  if cov == nil then return end
+
+  local current = vim.api.nvim_win_get_cursor(0)[1]
+  local is_next
+  local next
+  if direction == "next" then
+    is_next = function(line, nxt) return current < line and line < nxt end
+    next = 9999999
+  else -- "prev"
+    is_next = function(line, nxt) return current > line and line > nxt end
+    next = -1
+  end
+
+  for line, data in pairs(cov.lines) do
+    if is_next(line, next) and vim.tbl_contains(thresholds, Coverage.for_line(data)) then next = line end
+  end
+
+  if next ~= 9999999 and next ~= -1 then vim.api.nvim_win_set_cursor(0, { next, 0 }) end
+end
+
+---Go to the next line in the current file matching the given threshold(s)
+---@param thresholds nvim-neocov.ThresholdKind | nvim-neocov.ThresholdKind[]
+Coverage.next = function(thresholds) Coverage.jump("next", thresholds) end
+
+---Go to the previous line in the current file matching the given threshold(s)
+---@param thresholds nvim-neocov.ThresholdKind[]
+Coverage.prev = function(thresholds) Coverage.jump("prev", thresholds) end
 
 return Coverage

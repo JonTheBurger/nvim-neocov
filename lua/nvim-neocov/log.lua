@@ -142,7 +142,7 @@ end
 
 --- Writes comma-separated variables to the log
 ---@param level nvim-neocov.LogLevel
----@vararg Any lua objects
+---@vararg any lua objects
 ---@return string message body sent to logger, or empty string
 M.log = function(level, ...)
   if M.levels[level].verbosity > M.levels[M.config.level].verbosity then return "" end
@@ -155,7 +155,7 @@ end
 
 --- Using @see string.format to format a log message
 ---@param level nvim-neocov.LogLevel
----@vararg Any lua objects
+---@vararg any lua objects
 ---@return string message body sent to logger, or empty string
 M.logf = function(level, fmt, ...)
   if M.levels[level].verbosity > M.levels[M.config.level].verbosity then return "" end
@@ -169,7 +169,8 @@ end
 --- For dumping tables and control flow useful for users to upload when triaging bug reports.
 M.trace = function(...) return M.log("trace", ...) end
 
---- Users usually don't care about these, but if they turn them on they should get some info that helps them troubleshoot issues.
+--- Users usually don't care about these,
+--- but if they turn them on they should get some info that helps them troubleshoot issues.
 M.debug = function(...) return M.log("debug", ...) end
 
 --- A state change or event occurred, and the user should know.
@@ -193,7 +194,8 @@ M.error = function(...)
   return msg
 end
 
---- Plugin invariants have been violated, typically an environment or programmer error. We can no longer trust the state of the plugin.
+--- Plugin invariants have been violated, typically an environment or programmer error.
+--- We can no longer trust the state of the plugin.
 M.fatal = function(...)
   local msg = M.log("fatal", ...)
   vim.notify(msg, vim.log.levels.ERROR, { title = "Neocov" })

@@ -54,6 +54,8 @@ shell: ## Enter a shell containing dev dependencies
 	nix develop
 
 setup: ## Once-per-clone setup
+	git -C .cache clone https://github.com/nvim-neotest/neotest.git
+	git -C .cache clone https://github.com/stevearc/overseer.nvim.git
 	${LUAROCKS} install busted 2.2.0-1 --force
 	${LUAROCKS} install llscheck 0.7.0-1 --force
 	${LUAROCKS} install luacheck 1.2.0-1 --force
@@ -75,7 +77,9 @@ lint: ## Runs static analysis tools
 	printf '${BLU}=== luacheck ===${RST}\n'
 	luacheck lua plugin spec
 	printf '${BLU}=== llscheck ===${RST}\n'
-	$(shell ${LUAROCKS} path) && bVIMRUNTIME=${VIMRUNTIME} llscheck .
+	$(shell ${LUAROCKS} path) && VIMRUNTIME=${VIMRUNTIME} llscheck .
+	printf '${BLU}=== emmylua_check ===${RST}\n'
+	emmylua_check .
 
 echo:
 	@echo ${VIMRUNTIME}

@@ -1,0 +1,3 @@
+---emmylua_ls compatibility for lua_ls
+---@alias bool boolean
+---@alias int integer

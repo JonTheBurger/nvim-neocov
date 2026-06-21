@@ -80,7 +80,12 @@ M.setup = function(opts) require("nvim-neocov.config").setup(opts) end
 M.find = function(src)
   local cfg = require("nvim-neocov.config").config
   if type(cfg.file) == "string" then
-    vim.notify('Invalid type `string` for `nvim-neocov.Config.file` Did you mean `{ path = "' .. cfg.file .. '", kind = "..." }`?', vim.log.levels.ERROR)
+    vim.notify(
+      'Invalid type `string` for `nvim-neocov.Config.file` Did you mean `{ path = "'
+        .. cfg.file
+        .. '", kind = "..." }`?',
+      vim.log.levels.ERROR
+    )
     return nil
   elseif type(cfg.file) == "function" then
     return cfg.file(src)
@@ -142,6 +147,7 @@ M.annotate = function(bufs)
   -- Annotate
   local decorations = require("nvim-neocov.config").config.style.decorations
   for _, buf in ipairs(bufs) do
+    if buf == 0 then buf = vim.api.nvim_get_current_buf() end
     if not vim.tbl_contains(M.annotated, buf) then
       M.annotated[#M.annotated + 1] = buf
       require("nvim-neocov.annotate").buffer(buf, M.coverage, decorations)
