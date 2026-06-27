@@ -1,5 +1,6 @@
 local M = {}
 
+local nio = require("nio")
 local util = require("nvim-neocov.util")
 
 ---@param file any SonarQube XML <file> element
@@ -15,6 +16,7 @@ M.parse_lines = function(file)
   end
 
   for _, line in ipairs(lines2cover) do
+    nio.sleep(5)
     local branches = 0
     local covered = 0
 
@@ -44,6 +46,7 @@ end
 ---@param cov string Coverage file being parsed.
 ---@return nvim-neocov.Coverage report parsed from the file.
 M.parse = function(cov)
+  local spinner = util.spinner("Generating sonar coverage")
   local xml = require("nvim-neocov.xml").to_table(cov)
 
   ---@type nvim-neocov.Coverage
@@ -79,8 +82,10 @@ M.parse = function(cov)
 
   for _, file in ipairs(files) do
     report.files[util.to_abspath(file._attr.path)] = { lines = M.parse_lines(file) }
+    nio.sleep(0)
   end
 
+  spinner()
   return report
 end
 

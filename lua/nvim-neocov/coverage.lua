@@ -1,4 +1,5 @@
 local log = require("nvim-neocov.log")
+local nio = require("nio")
 local util = require("nvim-neocov.util")
 
 ---@class nvim-neocov.LineCoverage Coverage data for a single line
@@ -12,6 +13,8 @@ local util = require("nvim-neocov.util")
 ---TODO(JON): This isn't close to having enough info for Summary
 ---@class nvim-neocov.Coverage Coverage data for multiple files.
 ---@field files table<string, nvim-neocov.FileCoverage> Coverage data for each file.
+---@field private _lock_generate boolean True if load is in progress.
+---@field private _lock_load boolean True if load is in progress.
 ---file **MUST** be an absolute path!
 local Coverage = {}
 Coverage.__index = Coverage
@@ -19,6 +22,8 @@ Coverage.__index = Coverage
 Coverage.new = function()
   local self = {
     files = {},
+    _lock_generate = false,
+    _lock_load = false,
   }
   setmetatable(self, Coverage)
   return self
@@ -75,9 +80,10 @@ end
 
 ---TODO(JON): This whole thing might need to become a coroutine
 ---Finds, generates, and loads a coverage report utilizing the cache
----@param source_file string Path to source file to look up coverage for
+---@param source_file string|int Path to source file to look up coverage for or bufnr
 ---@return nvim-neocov.Coverage?
 Coverage.load = function(source_file)
+  if type(source_file) == "number" then source_file = vim.api.nvim_buf_get_name(source_file) end
   source_file = vim.fn.fnamemodify(source_file, ":p")
   log.trace("Coverage.load", source_file)
 
@@ -93,7 +99,7 @@ Coverage.load = function(source_file)
   if cached_file == nil then
     local cov_file = Coverage.find(source_file)
     if cov_file == nil then
-      log.infof('Could not determine a corresponding coverage file for source "%s"')
+      log.infof('Could not determine a corresponding coverage file for source "%s"', source_file)
       return nil
     end
 
@@ -194,54 +200,100 @@ Coverage.find = function(src)
   return nil
 end
 
+Coverage._parse = nio.create(function()
+  ---@param coverage_file string Path to existing file containing coverage data
+  ---@param kind nvim-neocov.ParserKind Name of parser to use
+  ---@return nvim-neocov.Coverage
+  Coverage.parse = function(coverage_file, kind)
+    local cfg = require("nvim-neocov.config").get()
+    local coverage = cfg.parsers[kind](coverage_file)
+    vim.api.nvim_exec_autocmds("User", { pattern = "NeocovNewCoverageLoaded" })
+    return coverage
+  end
+end, 2)
+
 ---@param coverage_file string Path to existing file containing coverage data
 ---@param kind nvim-neocov.ParserKind Name of parser to use
 ---@return nvim-neocov.Coverage
-Coverage.parse = function(coverage_file, kind)
-  local cfg = require("nvim-neocov.config").config
-  local coverage = cfg.parsers[kind](coverage_file)
-  vim.api.nvim_exec_autocmds("User", { pattern = "NeocovNewCoverageLoaded" })
-  return coverage
-end
+---@overload fun(coverage_file: string, kind: nvim-neocov.ParserKind, callback: fun(success: boolean, result: boolean)): nio.Task
+Coverage.parse = function(coverage_file, kind) return Coverage._parse(coverage_file, kind) end
+
+-- ---@async
+-- ---@param source_file string Code file coverage is being requested for
+-- ---@param kind? nvim-neocov.ParserKind Name of parser to use
+-- Coverage._async_generate = function(source_file, kind)
+--   overseer = require("overseer")
+--   local future = nio.control.future()
+--   overseer.run_task(
+--     {
+--       name = "neocov: generate coverage",
+--       autostart = false,
+--       params = {
+--         file = source_file,
+--         annotate = false,
+--       },
+--     },
+--     ---@module "overseer.task"
+--     ---@param task overseer.Task
+--     function(task)
+--       task:subscribe("on_complete", function(task)
+--         if task.status == "SUCCESS" then
+--           future.set(task)
+--         else
+--           future.set_error(task)
+--         end
+--       end)
+--       task:start()
+--     end
+--   )
+--   return future:wait()
+-- end
+-- Coverage._generate = nio.create(Coverage._async_generate, 2)
 
 ---@param source_file string Code file coverage is being requested for
 ---@param kind? nvim-neocov.ParserKind Name of parser to use
 ---@return boolean True for success, false for failure
-Coverage.generate = function(source_file, kind)
-  -- kind = kind or require("nvim-neocov.config").config.file
-  local has_overseer, overseer = pcall(require, "overseer")
-  if has_overseer then
-    --TODO(JON): Asyncify
-    -- local future = require("nio").control.future()
-    overseer.run_task(
-      {
-        name = "neocov: generate coverage",
-        autostart = false,
-        params = {
-          file = source_file,
-          annotate = false,
+---@overload fun(source_file: string, kind?: nvim-neocov.ParserKind, callback: fun(success: boolean, result: boolean)): nio.Task
+Coverage.generate = function(source_file, kind) return Coverage._generate(source_file, kind) end
+Coverage._generate = nio.create(
+  ---@async
+  ---@param source_file string
+  ---@param kind? nvim-neocov.ParserKind
+  function(source_file, kind)
+    local has_overseer, overseer = pcall(require, "overseer")
+    if has_overseer then
+      local future = nio.control.future()
+      overseer.run_task(
+        {
+          name = "neocov: generate coverage",
+          autostart = false,
+          params = {
+            file = source_file,
+            annotate = false,
+          },
         },
-      },
-      ---@module "overseer.task"
-      ---@param task overseer.Task
-      function(task)
-        -- task:subscribe("on_complete", function(task)
-        --   if task.status == "SUCCESS" then
-        --     future.set(task)
-        --   else
-        --     future.set_error(task)
-        --   end
-        -- end)
-        task:start()
-      end
-    )
-    -- return future.wait().status == "SUCCESS"
-    return true
-  else
-    --TODO(JON): Add a non-overseer workflow
-  end
-  return false
-end
+        ---@module "overseer.task"
+        ---@param task overseer.Task
+        function(task)
+          task:subscribe("on_complete", function(task)
+            if task.status == "SUCCESS" then
+              future.set(task)
+            else
+              future.set_error(task)
+            end
+          end)
+          task:start()
+        end
+      )
+      return future:wait().status == "SUCCESS"
+    else
+      log.infof("Generating info for %s...", source_file)
+      -- TODO(JON): non-overseer
+      log.debugf("  DONE Generating info for %s...", source_file)
+    end
+  end,
+  2
+)
 
 ---Go to the next/prev line in the current file matching the given threshold(s)
 ---@param direction "next"|"prev"

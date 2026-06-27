@@ -20,7 +20,8 @@ M.blend = function(fg, bg, alpha)
   return bit.bor(bit.lshift(r, 16), bit.lshift(g, 8), b)
 end
 
---- Gets visible buffers backed by actual files (these are likely to be code, and therefore may want coverage annotations)
+--- Gets visible buffers backed by actual files (these are likely to be code,
+--- and therefore may want coverage annotations)
 ---@param bufs? int|int[] Use nil, `bufs` will be returned as a list when non-nil.
 ---@return int[] List of file buffers
 M.get_file_bufs = function(bufs)
@@ -130,6 +131,55 @@ M.open_hover = function(lines, opts)
   vim.keymap.set("n", "<Esc>", "<cmd>close<cr>", { buffer = buf, nowait = true })
 
   return buf, win
+end
+
+--- Creates a notification spinner for e.g. noice.nvim
+---@param title string Title of the spinner task
+---@return fun() Function used to stop the spinner
+M.spinner = function(title)
+  local spinner_frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
+  local idx = 1
+  local id = nil
+  local timer = vim.uv.new_timer()
+  if timer == nil then
+    return function() end
+  end
+
+  -- local noice_progress = require("noice.lsp.progress")
+
+  timer:start(
+    0,
+    100,
+    vim.schedule_wrap(function()
+      id = vim.api.nvim_echo(
+        { { spinner_frames[idx] .. title, "Normal" } },
+        false,
+        { kind = "progress", title = title, id = id, status = "running", source = "neocov" }
+      )
+
+      -- vim.notify(
+      --   title .. " " .. spinner_frames[idx],
+      --   vim.log.levels.INFO,
+      --   {
+      --     replace = true,
+      --     title = title,
+      --     id = "neocov",
+      --     kind = "neocov",
+      --   }
+      -- )
+
+      idx = (idx % #spinner_frames) + 1
+    end)
+  )
+
+  return function()
+    timer:stop()
+    timer:close()
+    -- vim.notify(title .. " ", vim.log.levels.INFO, {
+    --   title = title,
+    --   id = "neocov",
+    -- })
+  end
 end
 
 --- Get the modified time of a file, or `nil` if the file did not exist or could not be read.

@@ -2,82 +2,50 @@
 --- **NO FILE OTHER THAN** `plugin/nvim-neocov.lua` **SHOULD IMPORT THIS.**
 local M = {}
 
-local Coverage = require("nvim-neocov.coverage")
-local annotate = require("nvim-neocov.annotate")
-local config = require("nvim-neocov.config")
-local log = require("nvim-neocov.log")
-local util = require("nvim-neocov.util")
+local neocov = require("nvim-neocov")
+local nio = require("nio")
 
---- Omnibus function
 M.neocov = function()
-  M.generate()
-  M.load()
-  M.show()
+  nio.run(function() neocov.neocov() end)
 end
 
 M.generate = function()
-  if
-    vim.bo[0].filetype == ""
-    or vim.bo[0].buftype == "nofile"
-    or vim.bo[0].buftype == "terminal"
-    or vim.bo[0].buftype == "prompt"
-  then
-    log.warning("Can't generate code coverage for buffer type ", vim.bo[0].buftype)
-    return
-  end
-
-  local filename = vim.api.nvim_buf_get_name(0)
-  log.infof("Generating info for %s...", filename)
-
-  local covfile = Coverage.file(filename)
-  require("nvim-neocov.coverage").generate(filename, covfile.kind)
-
-  log.debugf("  DONE Generating info for %s...", filename)
+  nio.run(function() neocov.generate() end)
 end
 
-M.load = function() Coverage.load(vim.api.nvim_buf_get_name(0)) end
+M.load = function()
+  nio.run(function() neocov.load() end)
+end
 
 M.show = function()
-  local cov = Coverage.load(vim.api.nvim_buf_get_name(0))
-  if cov == nil then
-    vim.notify("No coverage data found! Did you `Neocov generate`?")
-    return
-  end
-  annotate.buffer(0, cov, config.get().style.decorations)
+  nio.run(function() neocov.show() end)
 end
 
-M.hide = function() annotate.clear() end
+M.hide = function()
+  nio.run(function() neocov.hide() end)
+end
 
 M.toggle = function()
-  if next(annotate.cache) == nil then
-    M.show()
-  else
-    M.hide()
-  end
+  nio.run(function() neocov.toggle() end)
 end
 
----@param _action? "show"|"hide" Toggles when nil
-M.report = function(_action)
-  local coverage = require("nvim-neocov").load()
-  if coverage == nil then return end
-  local summary = require("nvim-neocov").summary(coverage)
-  local lines = vim.split(tostring(summary), "\n", { plain = true })
-  util.open_hover(lines)
+---@param action? "show"|"hide" Toggles when nil
+M.report = function(action)
+  nio.run(function() neocov.report(action) end)
 end
 
 ---@param direction? "next"|"prev"
 M.jump = function(direction)
-  direction = direction or "next"
-  require("nvim-neocov.coverage").jump(direction)
+  nio.run(function() neocov.jump(direction) end)
 end
 
 M.qflist = function()
-  local coverage = require("nvim-neocov").load()
-  if coverage == nil then return end
-  require("nvim-neocov.annotate").qflist(coverage, "covered")
+  nio.run(function() neocov.qflist() end)
 end
 
----@param _action? "on"|"off" Toggles when nil
-M.watch = function(_action) end
+---@param action? "on"|"off" Toggles when nil
+M.watch = function(action)
+  nio.run(function() neocov.watch(action) end)
+end
 
 return M

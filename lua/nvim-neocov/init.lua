@@ -3,31 +3,14 @@
 ---Only `plugin/` and third party integration modules should include this file.
 local M = {}
 
+local Coverage = require("nvim-neocov.coverage")
 local Summary = require("nvim-neocov.summary")
 local annotate = require("nvim-neocov.annotate")
+local config = require("nvim-neocov.config")
 
 ----------------------------------------------------------------------------------------
 ---@section Globals
 ----------------------------------------------------------------------------------------
-
----@type table<string, nvim-neocov.Summary> Cache of summaries for each file, or `""` key for the full project summary.
-M._file_summaries = {}
-
----@type nvim-neocov.Coverage? Most recently loaded coverage report used to generate a summary.
-M._summaries_coverage = nil
-
----@type nvim-neocov.Coverage? Most recently loaded coverage report.
-M.coverage = nil
-
----@type nvim-neocov.CoverageFile? Path to file source for most recently loaded coverage report.
-M.file = nil
-
----@type int Modified time of the coverage file used for the most recent `M.coverage` load. Used to determine if a reload is necessary.
-M.mtime = 0
-
---- List of buffers that have been annotated
----@type int[]
-M.annotated = {}
 
 ---@type nvim-neocov.Scope[]
 M.scope_names = {
@@ -55,8 +38,8 @@ vim.api.nvim_create_autocmd("BufWinEnter", {
   desc = "Automatically load coverage data for files",
   group = M.augroup,
   callback = function(args)
-    local cfg = require("nvim-neocov.config").config
-    if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then require("nvim-neocov").load() end
+    local cfg = config.get()
+    if vim.list_contains(cfg.autoload, vim.bo[args.buf].filetype) then Coverage.load(0) end
   end,
 })
 vim.api.nvim_create_autocmd("BufWipeout", {
@@ -72,89 +55,86 @@ vim.api.nvim_create_autocmd("BufWipeout", {
 
 --- Set up the plugin with custom settings
 ---@param opts? nvim-neocov.Options Plugin options
-M.setup = function(opts) require("nvim-neocov.config").setup(opts) end
+M.setup = function(opts) config.setup(opts) end
 
---- Locates a coverage file on disk
----@param src string? File the corresponding coverage report is being requested for, or nil if for the full project. If your project contains both C++ and Python, this is used to determine which kind of report to look up.
----@return nvim-neocov.CoverageFile? Path to the coverage file, or nil if no coverage file was found
-M.find = function(src)
-  local cfg = require("nvim-neocov.config").config
-  if type(cfg.file) == "string" then
-    vim.notify(
-      'Invalid type `string` for `nvim-neocov.Config.file` Did you mean `{ path = "'
-        .. cfg.file
-        .. '", kind = "..." }`?',
-      vim.log.levels.ERROR
-    )
-    return nil
-  elseif type(cfg.file) == "function" then
-    return cfg.file(src)
-  end
-
-  ---@diagnostic disable-next-line: assign-type-mismatch
-  ---@type nvim-neocov.CoverageFile[]
-  local files = (#cfg.file > 0) and cfg.file or { cfg.file }
-  for _, file in ipairs(files) do
-    if file.path:find("%*") then
-      -- Glob support
-      ---@type string[]
-      local matches = vim.fn.glob(file.path, false, true)
-      if #matches > 0 then return { path = matches[1], kind = file.kind } end
-    elseif vim.uv.fs_stat(file.path) then
-      -- Regular path exists check
-      return file
-    end
-  end
-
-  return nil
+---@async
+M.neocov = function()
+  M.generate()
+  M.load()
+  M.show()
 end
 
---- Loads the coverage data and adds annotations the given buffers.
----@return nvim-neocov.Coverage?
-M.load = function()
-  -- Find
-  if M.file == nil then
-    M.file = M.find()
-    if M.file == nil then return nil end
-  end
-
-  -- Load
-  ---@diagnostic disable-next-line: need-check-nil
-  local mtime = vim.uv.fs_stat(M.file.path).mtime.sec
-  if mtime > M.mtime then
-    M.coverage = require("nvim-neocov.config").config.parsers[M.file.kind](M.file.path)
-    M.mtime = mtime
-    vim.api.nvim_exec_autocmds("User", { pattern = "NeocovNewCoverageLoaded" })
-  end
-
-  return M.coverage
-end
-
---- Annotated buffer(s) with the most recently loaded coverage information.
----@param bufs? int|int[] Buffer(s) to annotate, or nil to annotate the currently visible buffers.
-M.annotate = function(bufs)
-  if M.coverage == nil then
-    vim.notify('No coverage data was loaded (did you call `require("neocov").load()`)')
+---@async
+M.generate = function()
+  if
+    vim.bo[0].filetype == ""
+    or vim.bo[0].buftype == "nofile"
+    or vim.bo[0].buftype == "terminal"
+    or vim.bo[0].buftype == "prompt"
+  then
+    log.warning("Can't generate code coverage for buffer type ", vim.bo[0].buftype)
     return
   end
 
-  if type(bufs) == "number" then
-    bufs = { bufs }
-  else
-    bufs = bufs or require("nvim-neocov.util").get_file_bufs()
-  end
+  local filename = vim.api.nvim_buf_get_name(0)
+  local covfile = Coverage.file(filename)
+  require("nvim-neocov.coverage").generate(filename, covfile.kind)
+end
 
-  -- Annotate
-  local decorations = require("nvim-neocov.config").config.style.decorations
-  for _, buf in ipairs(bufs) do
-    if buf == 0 then buf = vim.api.nvim_get_current_buf() end
-    if not vim.tbl_contains(M.annotated, buf) then
-      M.annotated[#M.annotated + 1] = buf
-      require("nvim-neocov.annotate").buffer(buf, M.coverage, decorations)
-    end
+---@async
+M.load = function() return Coverage.load(0) end
+
+---@async
+M.show = function()
+  local cov = Coverage.load(0)
+  if cov == nil then
+    vim.notify("No coverage data found! Did you `Neocov generate`?")
+    return
+  end
+  annotate.buffer(0, cov, config.get().style.decorations)
+end
+
+---@async
+M.hide = function() annotate.clear() end
+
+---@async
+M.toggle = function()
+  if next(annotate.cache) == nil then
+    M.show()
+  else
+    M.hide()
   end
 end
 
+---@async
+---@param _action? "show"|"hide" Toggles when nil
+M.report = function(_action)
+  local coverage = M.load()
+  if coverage == nil then return end
+  local summary = require("nvim-neocov").summary(coverage)
+  local lines = vim.split(tostring(summary), "\n", { plain = true })
+  util.open_hover(lines)
+end
+
+---@async
+---@param direction? "next"|"prev"
+M.jump = function(direction)
+  direction = direction or "next"
+  require("nvim-neocov.coverage").jump(direction)
+end
+
+---@async
+M.qflist = function()
+  local coverage = M.load()
+  if coverage == nil then return end
+  require("nvim-neocov.annotate").qflist(coverage, "covered")
+end
+
+---@async
+---@param _action? "on"|"off" Toggles when nil
+M.watch = function(_action) end
+
+-- TODO(JON): Move summary to the summary file
 ---@param cov nvim-neocov.FileCoverage
 ---@return nvim-neocov.Summary
 M._file_summary = function(cov)
@@ -210,20 +190,6 @@ M.summary = function(coverage, file)
   -- Cache
   M._file_summaries[file] = summary
   return summary
-end
-
---- Clears all coverage annotations and disables the `autoload` feature.
-M.clear = function()
-  for _, buf in ipairs(M.annotated) do
-    require("nvim-neocov.annotate").clear(buf)
-  end
-
-  M.annotated = {}
-  M.mtime = 0
-  M.file = nil
-  M.coverage = nil
-  M._summaries_coverage = nil
-  M._file_summaries = {}
 end
 
 ----------------------------------------------------------------------------------------

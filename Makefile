@@ -109,6 +109,7 @@ external: ## Vendor xml2lua
 	git -C lua/nvim-neocov/external/xml2lua checkout ${XML2LUA_REF}
 	find lua/nvim-neocov/external/xml2lua \
 	  -type f \
+	  ! -name "LICENSE" \
 	  ! -name "XmlParser.lua" \
 	  ! -name "xml2lua.lua" \
 	  ! -name "dom.lua" \
